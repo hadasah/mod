@@ -11,7 +11,7 @@ NUM_GPUS = 8
 #TODO change this
 DATA_BIN = '/gscratch/zlab/margsli/gitfiles/demix-data/data-bin' 
 #TODO change this
-DEMIX_FOLDER = '/gscratch/zlab/margsli/gitfiles/demix'
+MOD_FOLDER = '/gscratch/zlab/margsli/gitfiles/mod'
 #TODO change this
 # Top level folder for the models -- looks below this for subfolders that contain checkpoints
 MODEL_FOLDER = '/gscratch/zlab/margsli/demix-checkpoints/models/'
@@ -26,7 +26,7 @@ EVAL_FOLDER_ID = 'Base_demix'
 #Unfortunately this can't be set per job, I'm assuming we're always setting the right # updates
 CHECKPOINT_IDS = 'best,best,best,best,best,best,best,best'
 
-EVAL_SCRIPT = f'{DEMIX_FOLDER}/demix/mix_eval_pipeline.sh' if MODEL_TYPE in ['demix', 'modular'] else f'{DEMIX_FOLDER}/demix/eval_pipeline.sh'
+EVAL_SCRIPT = f'{MOD_FOLDER}/demix/mix_eval_pipeline.sh' if MODEL_TYPE in ['demix', 'modular'] else f'{MOD_FOLDER}/demix/eval_pipeline.sh'
 all_runs = os.listdir(MODEL_FOLDER)
 regex = re.compile(WANTED_FOLDER_REGEX)
 selected_folders = [folder for folder in all_runs if regex.match(folder)]
@@ -48,7 +48,7 @@ grids = {
             "EVAL_FOLDER_ID": [EVAL_FOLDER_ID],
             "EXCLUDE_EXPERT": ["False"],
             "ONLY_USE_DOMAIN_EXPERT": ['False'],
-            "DEMIX_FOLDER": [DEMIX_FOLDER],
+            "MOD_FOLDER": [MOD_FOLDER],
         },
         'named_args': {},
     },
@@ -75,6 +75,6 @@ for sweep_name, grid in grids.items():
         debug_mode=DEBUG_MODE,
         dry_mode=DRY_MODE,
         # add_name='end',
-        DIR_PATH=DEMIX_FOLDER,
+        DIR_PATH=MOD_FOLDER,
         
     )

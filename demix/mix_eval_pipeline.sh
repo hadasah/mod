@@ -58,16 +58,16 @@ if [[ "$generalist_model" != "None" ]]; then
     model=${model}:$generalist_model;
     evals_folder=generalist_evals_top${eval_top_k};
 fi;
-evals_folder=${id}_${evals_folder};
+evals_folder=${evals_folder}_${id};
 
-prior_results_path=${ROOT_MODEL_FOLDER}/${evals_folder}/${target_domain}/dev_posteriors.jsonl;
-results_path=${ROOT_MODEL_FOLDER}/${evals_folder}/${target_domain}/test_results.txt;
+prior_results_path=${ROOT_MODEL_FOLDER}/${MODEL_FOLDER}/${evals_folder}/${target_domain}/dev_posteriors.jsonl;
+results_path=${ROOT_MODEL_FOLDER}/${MODEL_FOLDER}/${evals_folder}/${target_domain}/test_results.txt;
 
-mkdir -p ${ROOT_MODEL_FOLDER}/${evals_folder}/${target_domain};
+mkdir -p ${ROOT_MODEL_FOLDER}/${MODEL_FOLDER}/${evals_folder}/${target_domain};
 cd $DEMIX_FOLDER;
-echo $results_path;
-echo $model;
-echo $DEMIX_FOLDER;
+# echo $results_path;
+# echo $model;
+# echo $DEMIX_FOLDER;
 
 echo "estimating probabilities...";
 target_eval_split=valid_${target_domain};
