@@ -67,7 +67,6 @@ for sweep_name, grid in grids.items():
         job_id_start=1,
         debug_mode=DEBUG_MODE,
         dry_mode=DRY_MODE,
-        # add_name='end',
         DIR_PATH=MOD_FOLDER,
-        
+        conda_env_name='latest',
     )

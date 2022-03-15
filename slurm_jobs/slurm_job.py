@@ -38,6 +38,7 @@ SLRM_JOB_ARRAY_TEMPLATE = """
 {SBATCH_EXTRAS}
 
 source ~/.bashrc
+conda activate {conda_env_name}
 
 echo "# -------- BEGIN CALL TO run.sh --------"
 # -K kills all subtasks if one particular task crashes. This is necessary for
@@ -148,6 +149,7 @@ def run_grid(
     dry_mode=False,
     add_name=None,
     dependencies=[],
+    conda_env_name='latest',
 ):
     """Generates full commands from a grid.
 
@@ -367,6 +369,7 @@ def run_grid(
         NEW_DIR_PATH=NEW_DIR_PATH,
         jobs_path=jobs_path,
         dependencies=dependencies,
+        conda_env_name=conda_env_name,
     )
 
 
@@ -442,6 +445,7 @@ def submit_array_jobs(
     NEW_DIR_PATH=DEFAULT_DIR_PATH,
     jobs_path=[],
     dependencies=[],
+    conda_env_name=None,
 ):
     SLURMFILE = os.path.join(SAVE_ROOT, 'run.slrm')
     if data_parallel or not gpus:

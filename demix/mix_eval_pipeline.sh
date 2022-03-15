@@ -28,6 +28,8 @@ only_use_expert=${13}
 
 DEMIX_FOLDER=${14}
 
+jq_path=${15}
+
 OIFS=$IFS;
 IFS=','
 read -a model_checkpoint_ids <<< "$CHECKPOINT_IDS";
@@ -106,7 +108,7 @@ python -u fairseq_cli/ensemble_eval_lm.py $data_path \
 --max-samples 100;
 
 # alias jq=~/jq-linux64;
-precomputed_prior=$(tail -n 1 ${prior_results_path} | ~/jq-linux64 -rc '.exp_avg_posterior | join(",")');
+precomputed_prior=$(tail -n 1 ${prior_results_path} | ${jq_path} -rc '.exp_avg_posterior | join(",")');
 echo $precomputed_prior;
 
 target_eval_split=test_${target_domain};

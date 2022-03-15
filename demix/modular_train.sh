@@ -6,12 +6,12 @@ NUM_GPUS=$2;
 NUM_NODES=$(((${NUM_GPUS}+7)/8));
 # Fairseq model name (e.g. transformer_lm; see https://github.com/kernelmachine/demix/blob/main/fairseq/models/transformer_lm.py for other options)
 ARCH=$3;
-# Baseline type: choice between demix, dense, unbalanced_dense, and domain_token
+# Type of experiment we're transferring from - 'dense' or 'demix'
 EXPERIMENT=$4;
 # id of demix domain to train on 
 DOMAIN_ID=$5;
 # path to top level directory to where you'd like to output the model
-TOP_LEVEL_SERIALIZATION_DIR=$6;
+MODEL_DIR=$6;
 # name of wandb project to track model output (at wandb.ai)
 WANDB_PROJECT=$7;
 
@@ -33,7 +33,7 @@ if [[ $DOMAIN == *"wikipedia"* ]]; then
 else
     DATA_PATH=/gscratch/zlab/margsli/gitfiles/demix-data/data-bin/${DOMAIN};
 fi
-SERIALIZATION_DIR=${TOP_LEVEL_SERIALIZATION_DIR}/${SWEEP_NAME}${MODEL_ID};
+SERIALIZATION_DIR=${MODEL_DIR}/${SWEEP_NAME}/${MODEL_ID};
 
 if [[ $CONTINUE_TRAIN == "True" ]]; then
     INIT_MODEL_PHRASE="";

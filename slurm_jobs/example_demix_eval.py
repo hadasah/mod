@@ -25,6 +25,7 @@ EVAL_FOLDER_ID = 'Base_demix'
 # Comma separated list of the checkpoint IDs. 
 #Unfortunately this can't be set per job, I'm assuming we're always setting the right # updates
 CHECKPOINT_IDS = 'best,best,best,best,best,best,best,best'
+JQ_PATH = '~/jq-linux64'
 
 EVAL_SCRIPT = f'{MOD_FOLDER}/demix/mix_eval_pipeline.sh' if MODEL_TYPE in ['demix', 'modular'] else f'{MOD_FOLDER}/demix/eval_pipeline.sh'
 all_runs = os.listdir(MODEL_FOLDER)
@@ -49,6 +50,7 @@ grids = {
             "EXCLUDE_EXPERT": ["False"],
             "ONLY_USE_DOMAIN_EXPERT": ['False'],
             "MOD_FOLDER": [MOD_FOLDER],
+            "JQ_PATH": [JQ_PATH]
         },
         'named_args': {},
     },
@@ -74,7 +76,7 @@ for sweep_name, grid in grids.items():
         job_id_start=1,
         debug_mode=DEBUG_MODE,
         dry_mode=DRY_MODE,
-        # add_name='end',
         DIR_PATH=MOD_FOLDER,
-        
+        #TODO change this
+        conda_env_name='latest',
     )
