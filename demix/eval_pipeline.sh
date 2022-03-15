@@ -12,18 +12,20 @@ target_domain_ID=$6
 
 force_domain_token=$7
 
+DEMIX_FOLDER=$8
+
 IDS_TO_DOMAINS=('1b' 'anonymized_openwebtext' 'anonymized_realnews' 'anonymized_reviews' 'cs' 'legal' 'med' 'reddit' 'anonymized_latest_news_redo' 'anonymized_tweets_redo' 'anonymized_yelp_reviews_redo' 'cord19-redo' 'github_redo' 'gutenberg' 'legal_contracts' 'qasper');
 
 target_domain=${IDS_TO_DOMAINS[$target_domain_ID]}
 
 model=${ROOT_MODEL_FOLDER}/${model_folder}/checkpoint_${CHECKPOINT_ID}.pt;
 
-prior_results_path=${ROOT_MODEL_FOLDER}/${model_folder}/${target_domain}/dev_posteriors.jsonl
-results_path=${ROOT_MODEL_FOLDER}/${model_folder}/${target_domain}/test_results.txt
+evals_folder=evals
 
-mkdir -p ${ROOT_MODEL_FOLDER}/${model_folder}/${target_domain};
-cd /gscratch/zlab/margsli/gitfiles/demix;
+results_path=${ROOT_MODEL_FOLDER}/${model_folder}/${evals_folder}/${target_domain}/test_results.txt
 
+mkdir -p ${ROOT_MODEL_FOLDER}/${model_folder}/${evals_folder}/${target_domain};
+cd $DEMIX_FOLDER;
 
 if [[ "$model" == *"domain_token"* ]]; then
     if [[ -z "$force_domain_token" ]]; then
