@@ -38,7 +38,7 @@ SLRM_JOB_ARRAY_TEMPLATE = """
 {SBATCH_EXTRAS}
 
 source ~/.bashrc
-conda activate {conda_env_name}
+{conda_command}
 
 echo "# -------- BEGIN CALL TO run.sh --------"
 # -K kills all subtasks if one particular task crashes. This is necessary for
@@ -149,7 +149,7 @@ def run_grid(
     dry_mode=False,
     add_name=None,
     dependencies=[],
-    conda_env_name='latest',
+    conda_env_name=None,
 ):
     """Generates full commands from a grid.
 
@@ -474,6 +474,9 @@ def submit_array_jobs(
 
     if dependencies:
         SBATCH_EXTRAS.append('#SBATCH --dependency="{}"'.format(','.join(['afterok:' + str(d) for d in dependencies])))
+
+    if conda_env_name:
+        conda_command = f'conda activate {conda_env_name}' else ''
 
     # make sure sbatch extras are a string
     SBATCH_EXTRAS = "\n".join(SBATCH_EXTRAS)

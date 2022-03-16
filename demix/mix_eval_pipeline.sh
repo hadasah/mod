@@ -26,7 +26,7 @@ exclude_expert=${12}
 
 only_use_expert=${13} 
 
-DEMIX_FOLDER=${14}
+MOD_FOLDER=${14}
 
 jq_path=${15}
 
@@ -66,10 +66,10 @@ prior_results_path=${ROOT_MODEL_FOLDER}/${MODEL_FOLDER}/${evals_folder}/${target
 results_path=${ROOT_MODEL_FOLDER}/${MODEL_FOLDER}/${evals_folder}/${target_domain}/test_results.txt;
 
 mkdir -p ${ROOT_MODEL_FOLDER}/${MODEL_FOLDER}/${evals_folder}/${target_domain};
-cd $DEMIX_FOLDER;
+cd $MOD_FOLDER;
 # echo $results_path;
 # echo $model;
-# echo $DEMIX_FOLDER;
+# echo $MOD_FOLDER;
 
 echo "estimating probabilities...";
 target_eval_split=valid_${target_domain};
