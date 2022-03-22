@@ -1,18 +1,14 @@
 from slurm_jobs.slurm_job import run_grid
+from slurm_jobs.slurm_constants_margaret_klone import *
 import os
 
-SWEEP_NAME = "sweep_gpt3_small"
+SWEEP_NAME = "sweep_gpt3_small_to_mod"
 DEBUG_MODE = True
 DRY_MODE = False
 name_keys = []
 NUM_GPUS = 8
 
-#TODO change this
-DATA_BIN = '/gscratch/zlab/margsli/gitfiles/demix-data/data-bin' 
-#TODO change this
-MOD_FOLDER = '/gscratch/zlab/margsli/gitfiles/demix'
-#TODO change this
-MODEL_FOLDER = '/gscratch/zlab/margsli/demix-checkpoints/models/test'
+CHECKPOINT_ID = 'best'
 
 grids = {
     SWEEP_NAME: {
@@ -40,7 +36,7 @@ for sweep_name, grid in grids.items():
         name_keys,
         sweep_name,
         user=os.environ['USER'],
-        prefix=f'bash {DEMIX_FOLDER}/demix/mix_eval_pipeline.sh',
+        prefix=f'bash {MOD_FOLDER}/demix/downstream_train.sh',
         gpus=NUM_GPUS,
         cpus=4,
         nodes=1,
