@@ -208,6 +208,21 @@ def load_checkpoint(cfg: CheckpointConfig, trainer, **passthrough_args):
                 raise ValueError(
                     f"--funetune-from-model {cfg.finetune_from_model} does not exist"
                 )
+        # if cfg.adapt_from_model is not None and first_launch:
+        #     # if there is no last checkpoint to restore, start the finetune from pretrained model
+        #     # else just use usual logic to load checkpoint, e.g. restart from last checkpoint and etc.
+        #     if PathManager.exists(cfg.finetune_from_model):
+        #         checkpoint_path = cfg.finetune_from_model
+        #         reset_meters = True
+        #         reset_dataloader = True
+        #         logger.info(
+        #             f"loading pretrained model from {checkpoint_path} for adaptation: "
+        #             "meters, dataloader will be reset"
+        #         )
+        #     else:
+        #         raise ValueError(
+        #             f"--adapt-from-model {cfg.finetune_from_model} does not exist"
+        #         )
     elif cfg.model_parallel_size > 1:
         checkpoint_path = cfg.restore_file.replace(".pt", suffix + ".pt")
     else:

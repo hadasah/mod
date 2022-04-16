@@ -1,4 +1,5 @@
 from slurm_jobs.slurm_job import run_grid
+from slurm_constants_margaret_klone import *
 import os
 import re
 
@@ -8,14 +9,6 @@ DRY_MODE = True
 name_keys = []
 NUM_GPUS = 8
 
-#TODO change this
-DATA_BIN = '/gscratch/zlab/margsli/gitfiles/demix-data/data-bin' 
-#TODO change this
-MOD_FOLDER = '/gscratch/zlab/margsli/gitfiles/mod'
-#TODO change this
-# Top level folder for the models -- looks below this for subfolders that contain checkpoints
-MODEL_FOLDER = '/gscratch/zlab/margsli/demix-checkpoints/models/'
-# MODEL_FOLDER = '/checkpoint/suching/margaret_sweep/medium/'
 # This regex looks in MODEL_FOLDER's subfolders for matches
 WANTED_FOLDER_REGEX = '.*demix.*'
 # Used to distinguish between my naming conventions for demix vs modular models
@@ -25,7 +18,6 @@ EVAL_FOLDER_ID = 'Base_demix'
 # Comma separated list of the checkpoint IDs. 
 #Unfortunately this can't be set per job, I'm assuming we're always setting the right # updates
 CHECKPOINT_IDS = 'best,best,best,best,best,best,best,best'
-JQ_PATH = '~/jq-linux64'
 
 EVAL_SCRIPT = f'{MOD_FOLDER}/demix/mix_eval_pipeline.sh' if MODEL_TYPE in ['demix', 'modular'] else f'{MOD_FOLDER}/demix/eval_pipeline.sh'
 all_runs = os.listdir(MODEL_FOLDER)

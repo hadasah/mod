@@ -476,7 +476,7 @@ def submit_array_jobs(
         SBATCH_EXTRAS.append('#SBATCH --dependency="{}"'.format(','.join(['afterok:' + str(d) for d in dependencies])))
 
     if conda_env_name:
-        conda_command = f'conda activate {conda_env_name}' else ''
+        conda_command = f'conda activate {conda_env_name}' if conda_env_name else ''
 
     # make sure sbatch extras are a string
     SBATCH_EXTRAS = "\n".join(SBATCH_EXTRAS)

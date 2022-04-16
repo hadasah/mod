@@ -41,7 +41,6 @@ BATCH_SIZE=2;
 LOG_INTERVAL=50;
 KEEP_INTERVAL_UPDATES=-1;
 
-
 if [[ $ARCH == *"gpt3_small"* ]]; then
      CLIP_NORM=0.1;
      SAVE_INTERVAL_UPDATES=6000;
