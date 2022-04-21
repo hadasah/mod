@@ -56,7 +56,7 @@ for sweep_name, grid in grids.items():
         user=os.environ['USER'],
         prefix=f'bash {MOD_FOLDER}/demix/modular_train.sh',
         gpus=NUM_GPUS,
-        cpus=4,
+        cpus=10,
         nodes=1,
         #TODO change these
         account=RUN_CONSTANTS.get('SLURM_ACCOUNT'),

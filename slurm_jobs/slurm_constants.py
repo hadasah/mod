@@ -14,7 +14,7 @@ CONSTANTS = {
         "MODEL_FOLDER":'/checkpoint/suching/mod_sweep/models/',
         "LOG_FOLDER": '/checkpoint/suching/mod_sweep/models/',
         "JQ_PATH":'jq',
-        "SLURM_ACCOUNT": "",
-        "SLURM_PARTITION": ""
+        "SLURM_ACCOUNT": "fairusers",
+        "SLURM_PARTITION": "devlab,learnlab"
     }
 }
