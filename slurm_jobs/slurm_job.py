@@ -11,6 +11,12 @@ import sys
 import random
 import hashlib
 
+from slurm_jobs.slurm_constants import CONSTANTS
+username = os.getlogin()
+RUN_CONSTANTS = CONSTANTS.get(username)
+if RUN_CONSTANTS is None:
+    raise Error("username isn't defined in slurm_constants file")
+
 DEFAULT_DIR_PATH = '/gscratch/zlab/margsli/gitfiles/demix'
 BASH_IF_CLAUSE = """
 if [[ "$SLURM_ARRAY_TASK_ID" == "{index}" ]]; then
@@ -384,14 +390,16 @@ def bash(bashCommand):
 
 def save_root(SWEEP_NAME, unixname):
     """Return root folder for saving model files, stdout, stderr, etc."""
-    DATE = bash('date +"%Y%m%d"')
-    SAVE_ROOT = os.path.join('/gscratch/zlab/margsli/demix-checkpoints', DATE, SWEEP_NAME)
+    # DATE = bash('date +"%Y%m%d"')
+    # SAVE_ROOT = os.path.join(RUN_CONSTANTS.get('MODEL_FOLDER'), DATE, SWEEP_NAME)
+    SAVE_ROOT = os.path.join(RUN_CONSTANTS.get('MODEL_FOLDER'), SWEEP_NAME)
     return SAVE_ROOT
 
 def log_root(SWEEP_NAME, unixname):
     """Return root folder for saving tensorboard logs"""
-    DATE = bash('date +"%Y%m%d"')
-    LOG_ROOT = os.path.join('/gscratch/zlab/margsli/demix-checkpoints', DATE, SWEEP_NAME)
+    # DATE = bash('date +"%Y%m%d"')
+    # SAVE_ROOT = os.path.join('/gscratch/zlab/margsli/demix-checkpoints', DATE, SWEEP_NAME)
+    LOG_ROOT = os.path.join(RUN_CONSTANTS.get('LOG_FOLDER'), SWEEP_NAME)
     return LOG_ROOT
 
 
@@ -475,8 +483,7 @@ def submit_array_jobs(
     if dependencies:
         SBATCH_EXTRAS.append('#SBATCH --dependency="{}"'.format(','.join(['afterok:' + str(d) for d in dependencies])))
 
-    if conda_env_name:
-        conda_command = f'conda activate {conda_env_name}' if conda_env_name else ''
+    conda_command = f'conda activate {conda_env_name}' if conda_env_name else ''
 
     # make sure sbatch extras are a string
     SBATCH_EXTRAS = "\n".join(SBATCH_EXTRAS)

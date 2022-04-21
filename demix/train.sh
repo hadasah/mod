@@ -11,21 +11,28 @@ ARCH=$3
 EXPERIMENT=$4
 # Path to data-bins
 DATA_PATH=$5
-# path to directory to where you'd like to output the model
-SERIALIZATION_DIR=$6
+# Old directory to copy checkpoints from -- can be "None" if training from scratch
+OLD_DIR=$6
+# path to top-level directory to where you'd like to output the model
+MODEL_DIR=$7
+# Name of subdirectory for this sweep -- should be unique to this sweep
+SUBFOLDER_NAME=$8
+
+PHASE_ONE_RATIO=$9
 # total number of updates
-NUM_STEPS=$7
+NUM_STEPS=${10}
 # update frequency
-UPDATE_FREQ=$8
+UPDATE_FREQ=${11}
 # learning rate
-LR=$9
-# suffix to append to model output (e.g. "test", "final")
-FILE_SUFFIX=${10}
-# demix folder
-DEMIX_FOLDER=${11}
-# WANDB_PROJECT=${12};
+LR=${12}
+# wandb project name for logging
+WANDB_PROJECT=${13}
+# wandb group name for logging (can be user name)
+WANDB_ENTITY=${14}
+# MOD code folder
+MOD_FOLDER=${15}
 # identifier of this run in the sweep
-ID=${12}
+ID=${16}
 
 
 # list of domains you'd like to train on, that can be found in $DATA_PATH
@@ -43,8 +50,8 @@ KEEP_INTERVAL_UPDATES=-1;
 
 if [[ $ARCH == *"gpt3_small"* ]]; then
      CLIP_NORM=0.1;
-     SAVE_INTERVAL_UPDATES=6000;
-     VALIDATION_INTERVAL=3000;
+     SAVE_INTERVAL_UPDATES=100;
+     VALIDATION_INTERVAL=100;
      NUM_WARMUP_STEPS=$((${NUM_STEPS} * 8 / 100));
 elif [[ $ARCH == *"gpt3_medium"* ]]; then
      NUM_WARMUP_STEPS=$((${NUM_STEPS} * 8 / 100));
@@ -105,9 +112,23 @@ fi;
 # if [[ $EXPERIMENT == *"demix"* ]]; then
 #      UPDATE_FREQ=$UPDATE_FREQ*$NUM_GPUS
 # fi;
+RESET_DATALOADER_PHRASE='';
+SERIALIZATION_DIR=${MODEL_DIR}/${SUBFOLDER_NAME}/${ID};
+
+if [[ $OLD_DIR != "None" ]]; then
+     RESET_DATALOADER_PHRASE='--reset-dataloader';
+     SERIALIZATION_DIR=${MODEL_DIR}/${SUBFOLDER_NAME};
+     python $MOD_FOLDER/mod_utils/mod_checkpoint_utils.py \
+          --old-folder $OLD_DIR \
+          --new-folder $MODEL_DIR \
+          --subfolder $SUBFOLDER_NAME \
+          --phase-one-ratio $PHASE_ONE_RATIO ;
+     
+fi;
+
 
 if [[ $EXPERIMENT == *"demix"* ]]; then
-     python $DEMIX_FOLDER/fairseq_cli/train.py     $DATA_PATH \
+     python $MOD_FOLDER/fairseq_cli/train.py $DATA_PATH \
           --task multidomain_language_modeling \
           --sample-break-mode none \
           --log-format simple  \
@@ -134,9 +155,10 @@ if [[ $EXPERIMENT == *"demix"* ]]; then
           --total-num-update $NUM_STEPS     \
           --warmup-updates $NUM_WARMUP_STEPS     \
           --update-freq $UPDATE_FREQ     \
-          --save-dir ${SERIALIZATION_DIR}/${ID}     \
+          --save-dir ${SERIALIZATION_DIR}   \
           --batch-size-valid 2                        \
           --wandb-project $WANDB_PROJECT           \
+          --wandb-entity $WANDB_ENTITY \
           --valid-subset $valid_subset \
           --train-domains $domains  \
           --eval-domains $domains \
@@ -150,9 +172,10 @@ if [[ $EXPERIMENT == *"demix"* ]]; then
           --untie-parameters feedforward \
           --data-parallel-groups "${DATA_PARALLEL_GROUPS}" \
           --all-gather-list-size 32000 \
+          $RESET_DATALOADER_PHRASE \
           --pad-to-fixed-length;
 elif [[ $EXPERIMENT == *"unbalanced"* ]]; then
-     python $DEMIX_FOLDER/fairseq_cli/train.py     $DATA_PATH \
+     python $MOD_FOLDER/fairseq_cli/train.py     $DATA_PATH \
           --task multidomain_language_modeling \
           --sample-break-mode none \
           --log-format simple  \
@@ -179,7 +202,7 @@ elif [[ $EXPERIMENT == *"unbalanced"* ]]; then
           --total-num-update $NUM_STEPS     \
           --warmup-updates $NUM_WARMUP_STEPS     \
           --update-freq $UPDATE_FREQ     \
-          --save-dir ${SERIALIZATION_DIR}/${ID}      \
+          --save-dir ${SERIALIZATION_DIR}     \
           --batch-size-valid 2                        \
           --wandb-project $WANDB_PROJECT           \
           --valid-subset $valid_subset \
@@ -191,9 +214,10 @@ elif [[ $EXPERIMENT == *"unbalanced"* ]]; then
           --distributed-port $PORT \
           --all-gather-list-size 32000 \
           --ddp-backend no_c10d \
+          $RESET_DATALOADER_PHRASE \
           --unbalanced;
 elif [[ $EXPERIMENT == *"dense"* ]]; then
-     python $DEMIX_FOLDER/fairseq_cli/train.py     $DATA_PATH \
+     python $MOD_FOLDER/fairseq_cli/train.py     $DATA_PATH \
           --task multidomain_language_modeling \
           --sample-break-mode none \
           --log-format simple  \
@@ -220,7 +244,7 @@ elif [[ $EXPERIMENT == *"dense"* ]]; then
           --total-num-update $NUM_STEPS     \
           --warmup-updates $NUM_WARMUP_STEPS     \
           --update-freq $UPDATE_FREQ     \
-          --save-dir ${SERIALIZATION_DIR}/${ID}      \
+          --save-dir ${SERIALIZATION_DIR}     \
           --batch-size-valid 2                        \
           --wandb-project $WANDB_PROJECT           \
           --valid-subset $valid_subset \
@@ -231,10 +255,10 @@ elif [[ $EXPERIMENT == *"dense"* ]]; then
           --distributed-world-size $NUM_GPUS \
           --distributed-port $PORT \
           --ddp-backend no_c10d \
+          $RESET_DATALOADER_PHRASE \
           --all-gather-list-size 32000;
 elif [[ $EXPERIMENT == *"switch"* ]]; then
-     python $DEMIX_FOLDER/fairseq_cli/train.py     \
-          $DATA_PATH     \
+     python $MOD_FOLDER/fairseq_cli/train.py $DATA_PATH     \
           --task multidomain_language_modeling     \
           --sample-break-mode none     \
           --log-format simple     \
@@ -261,7 +285,7 @@ elif [[ $EXPERIMENT == *"switch"* ]]; then
           --total-num-update $NUM_STEPS     \
           --warmup-updates $NUM_WARMUP_STEPS     \
           --wandb-project $WANDB_PROJECT \
-          --save-dir ${SERIALIZATION_DIR}/${ID}         \
+          --save-dir ${SERIALIZATION_DIR}         \
           --batch-size-valid 2                        \
           --train-domains $domains \
           --eval-domains $domains \
@@ -280,10 +304,10 @@ elif [[ $EXPERIMENT == *"switch"* ]]; then
           --distributed-world-size $NUM_GPUS \
           --distributed-port $PORT \
           --ddp-backend no_c10d \
+          $RESET_DATALOADER_PHRASE \
           --all-gather-list-size 32000;
 elif [[ $EXPERIMENT == *"gshard"* ]]; then
-     python $DEMIX_FOLDER/fairseq_cli/train.py     \
-          $DATA_PATH     \
+     python $MOD_FOLDER/fairseq_cli/train.py $DATA_PATH     \
           --task multidomain_language_modeling     \
           --sample-break-mode none     \
           --log-format simple     \
@@ -310,7 +334,7 @@ elif [[ $EXPERIMENT == *"gshard"* ]]; then
           --total-num-update $NUM_STEPS     \
           --warmup-updates $NUM_WARMUP_STEPS     \
           --wandb-project $WANDB_PROJECT \
-          --save-dir ${SERIALIZATION_DIR}/${ID}         \
+          --save-dir ${SERIALIZATION_DIR}         \
           --batch-size-valid 2                        \
           --train-domains $domains \
           --eval-domains $domains \
@@ -328,10 +352,11 @@ elif [[ $EXPERIMENT == *"gshard"* ]]; then
           --distributed-world-size $NUM_GPUS \
           --distributed-port $PORT \
           --ddp-backend no_c10d \
+          $RESET_DATALOADER_PHRASE \
           --all-gather-list-size 32000;
 elif [[ $EXPERIMENT == *"domain_token"* ]]; then
      # domain token
-     python $DEMIX_FOLDER/fairseq_cli/train.py     $DATA_PATH \
+     python $MOD_FOLDER/fairseq_cli/train.py     $DATA_PATH \
           --task multidomain_language_modeling \
           --sample-break-mode none \
           --log-format simple  \
@@ -358,7 +383,7 @@ elif [[ $EXPERIMENT == *"domain_token"* ]]; then
           --total-num-update $NUM_STEPS     \
           --warmup-updates $NUM_WARMUP_STEPS     \
           --update-freq $UPDATE_FREQ     \
-          --save-dir ${SERIALIZATION_DIR}/${ID}      \
+          --save-dir ${SERIALIZATION_DIR}     \
           --batch-size-valid 2                        \
           --wandb-project $WANDB_PROJECT           \
           --valid-subset $valid_subset \
@@ -370,5 +395,6 @@ elif [[ $EXPERIMENT == *"domain_token"* ]]; then
           --distributed-port $PORT \
           --all-gather-list-size 32000 \
           --ddp-backend no_c10d \
+          $RESET_DATALOADER_PHRASE \
           --add-domain-token;
 fi;

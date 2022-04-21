@@ -10,20 +10,19 @@ if username not in CONSTANTS:
 RUN_CONSTANTS = CONSTANTS.get(username)
 MOD_FOLDER = RUN_CONSTANTS.get('MOD_FOLDER')
 
-SWEEP_NAME = "sweep_gpt3_small_to_mod"
-DEBUG_MODE = False
-DRY_MODE = True
-name_keys = []
+SWEEP_NAME = "sweep_gpt3_medium_to_mod"
+DEBUG_MODE = True
+DRY_MODE = False
+name_keys = ["MODEL", "DOMAIN_ID", "PHASE_ONE_RATIO"]
 NUM_GPUS = 1
 
-# CHECKPOINTS_TOP_FOLDER = '/checkpoint/suching/margaret_sweep/small/'
-# NEW_MODEL_TOP_FOLDER = '/checkpoint/suching/margaret_sweep/small_to_mod/'
+# CHECKPOINTS_TOP_FOLDER = '/gscratch/zlab/margsli/demix-checkpoints/models'
+# NEW_MODEL_TOP_FOLDER = '/gscratch/zlab/margsli/demix-checkpoints/models_test'
+CHECKPOINTS_TOP_FOLDER = '/gscratch/zlab/margsli/demix-checkpoints/models/_modular_gpt3_medium_16gpuday/modular_gpt3_medium_16gpuday_DOMAIN=1b_LR=0.001/'
+NEW_MODEL_TOP_FOLDER = '/gscratch/zlab/margsli/demix-checkpoints/models_test/_modular_gpt3_medium_16gpuday/modular_gpt3_medium_16gpuday_DOMAIN=1b_LR=0.001/'
 
-CHECKPOINTS_TOP_FOLDER = '/gscratch/zlab/margsli/demix-checkpoints/models'
-NEW_MODEL_TOP_FOLDER = '/gscratch/zlab/margsli/demix-checkpoints/models_test'
-phase_one_ratio = 0.5
-
-FOLDERS = mod_checkpoint_utils.find_folders(CHECKPOINTS_TOP_FOLDER)
+re_string = ''
+FOLDERS = mod_checkpoint_utils.find_folders(CHECKPOINTS_TOP_FOLDER, re_string=re_string)
 print(FOLDERS)
 
 grids = {
@@ -31,15 +30,19 @@ grids = {
         'fixed_args': '',
         'positional_args': {
             "NUM_GPUS": [NUM_GPUS],
-            "MODEL": ['transformer_lm_gpt3_small'],
+            "MODEL": ['transformer_lm_gpt3_medium'],
             "DATA_BIN": [RUN_CONSTANTS.get('DATA_BIN')],
-            "DOMAIN_IDS": [i for i in range(8)],
-            "EXPERIMENT_SUFFIX": ["lr_sweep"],
+            "DOMAIN_ID": [i for i in range(1,8)],
             "PARAMS_TO_FREEZE": ["None"],
-            "CHECKPOINTS_TOP_FOLDER": [CHECKPOINTS_TOP_FOLDER],
+            "COPYING_MODEL_FOLDER": [CHECKPOINTS_TOP_FOLDER],
             "NEW_MODEL_TOP_FOLDER": [NEW_MODEL_TOP_FOLDER],
-            "CHECKPOINTS_SUBFOLDER": [FOLDERS],
-            "PHASE_ONE_RATIO": [],
+            "CHECKPOINTS_SUBFOLDER": FOLDERS,
+            "PHASE_ONE_RATIO": [0.5],
+            "NUM_STEPS": [18000],
+            "UPDATE_FREQ": [32],
+            "LR": [1e-3],
+            "WANDB_PROJECT": ['test'],
+            "WANDB_ENTITY": ['scaling-demix'],
             "MOD_FOLDER": [MOD_FOLDER],
         },
         'named_args': {},
@@ -57,10 +60,10 @@ for sweep_name, grid in grids.items():
         cpus=4,
         nodes=1,
         #TODO change these
-        account='zlab',
-        partition='ckpt',
-        jobtime='2:00:00',
-        mem_gb=40,
+        account='bdata',
+        partition='gpu-rtx6k',
+        jobtime='24:00:00',
+        mem_gb=42,
         job_id_start=1,
         debug_mode=DEBUG_MODE,
         dry_mode=DRY_MODE,

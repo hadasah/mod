@@ -1,17 +1,17 @@
 from slurm_jobs.slurm_job import run_grid
-from slurm_constants import CONSTANTS
+from slurm_jobs.slurm_constants import CONSTANTS
 import os
 
 username = os.getlogin()
 RUN_CONSTANTS = CONSTANTS.get(username)
 if RUN_CONSTANTS is None:
     raise Error("username isn't defined in slurm_constants file")
-
+MOD_FOLDER = RUN_CONSTANTS.get('MOD_FOLDER')
 
 SWEEP_NAME = "sweep_gpt3_small"
-DEBUG_MODE = True
+DEBUG_MODE = False
 DRY_MODE = False
-name_keys = []
+name_keys = ["EXPERIMENT", "MODEL", "LR", "NUM_STEPS"]
 NUM_GPUS = 8
 
 grids = {
@@ -21,14 +21,18 @@ grids = {
             "NUM_GPUS": [NUM_GPUS],
             "DISTRIBUTED_PORT": [43212],
             "MODEL": ['transformer_lm_gpt3_small'],
-            "EXPERIMENT": ['dense'],
+            "EXPERIMENT": ['dense', 'demix'],
             "DATA_BIN": [RUN_CONSTANTS.get('DATA_BIN')],
-            "ROOT_MODEL_FOLDER": [RUN_CONSTANTS.get('MODEL_FOLDER')],
+            "COPYING_MODEL_FOLDER": ["None"],
+            "MODEL_FOLDER": [RUN_CONSTANTS.get('MODEL_FOLDER')],
+            "SUBFOLDER_NAME": [SWEEP_NAME],
+            "PHASE_ONE_RATIO": ["None"],
             "NUM_STEPS": [18000, 36000],
             "UPDATE_FREQ": [32],
-            "LR": [1e-4, 2e-4, 5e-4, 1e-3, 2e-3],
-            "EXPERIMENT_SUFFIX": ["lr_sweep"],
-            "MOD_FOLDER": [RUN_CONSTANTS.get('MOD_FOLDER')],
+            "LR": [1e-3],
+            "WANDB_PROJECT": ['test'],
+            "WANDB_ENTITY": ['scaling-demix'],
+            "MOD_FOLDER": [MOD_FOLDER],
         },
         'named_args': {},
     },
@@ -40,18 +44,18 @@ for sweep_name, grid in grids.items():
         name_keys,
         sweep_name,
         user=os.environ['USER'],
-        prefix=f'bash {RUN_CONSTANTS.get('MOD_FOLDER')}/demix/train.sh',
+        prefix=f'bash {MOD_FOLDER}/demix/train.sh',
         gpus=NUM_GPUS,
         cpus=4,
         nodes=1,
         #TODO change these
-        account='zlab',
-        partition='ckpt',
-        jobtime='2:00:00',
-        mem_gb=40,
+        account='bdata',
+        partition='gpu-rtx6k',
+        jobtime='48:00:00',
+        mem_gb=50,
         job_id_start=1,
         debug_mode=DEBUG_MODE,
         dry_mode=DRY_MODE,
         add_name='end',
-        DIR_PATH=RUN_CONSTANTS.get('MOD_FOLDER'),
+        DIR_PATH=MOD_FOLDER,
     )

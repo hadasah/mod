@@ -8,8 +8,8 @@ if RUN_CONSTANTS is None:
     raise Error("username isn't defined in slurm_constants file")
 MOD_FOLDER = RUN_CONSTANTS.get('MOD_FOLDER')
 
-SWEEP_NAME = "sweep_gpt3_small"
-DEBUG_MODE = True
+SWEEP_NAME = "dense_gpt3_med"
+DEBUG_MODE = False
 DRY_MODE = False
 name_keys = []
 NUM_GPUS = 8
@@ -20,18 +20,14 @@ grids = {
         'positional_args': {
             "NUM_GPUS": [NUM_GPUS],
             "DISTRIBUTED_PORT": [43212],
-            "MODEL": ['transformer_lm_gpt3_small'],
+            "MODEL": ['transformer_lm_gpt3_medium'],
             "EXPERIMENT": ['dense'],
             "DATA_BIN": [RUN_CONSTANTS.get('DATA_BIN')],
-            "COPYING_MODEL_FOLDER": ["None"],
-            "NEW_MODEL_FOLDER": [RUN_CONSTANTS.get('MODEL_FOLDER')],
-            "SUBFOLDER_NAME": [SWEEP_NAME],
-            "PHASE_ONE_RATIO": ["None"],
-            "NUM_STEPS": [18000, 36000],
+            "ROOT_MODEL_FOLDER": [RUN_CONSTANTS.get('MODEL_FOLDER')],
+            "NUM_STEPS": [6000, 12000, 24000],
             "UPDATE_FREQ": [32],
-            "LR": [1e-4, 2e-4, 5e-4, 1e-3, 2e-3],
-            "WANDB_PROJECT": [''],
-            "WANDB_ENTITY": ['scaling-demix'],
+            "LR": [2e-3],
+            "SWEEP_NAME": [SWEEP_NAME],
             "MOD_FOLDER": [MOD_FOLDER],
         },
         'named_args': {},
@@ -50,9 +46,9 @@ for sweep_name, grid in grids.items():
         nodes=1,
         #TODO change these
         account='zlab',
-        partition='ckpt',
-        jobtime='2:00:00',
-        mem_gb=40,
+        partition='gpu-rtx6k',
+        jobtime='48:00:00',
+        mem_gb=50,
         job_id_start=1,
         debug_mode=DEBUG_MODE,
         dry_mode=DRY_MODE,
