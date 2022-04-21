@@ -1,5 +1,5 @@
 from mod_utils import mod_checkpoint_utils
-from slurm_constants import CONSTANTS
+from slurm_jobs.slurm_constants import CONSTANTS
 from slurm_jobs.slurm_job import run_grid
 import fairseq
 import os
@@ -17,7 +17,7 @@ NUM_GPUS = 1
 
 # CHECKPOINTS_TOP_FOLDER = '/gscratch/zlab/margsli/demix-checkpoints/models'
 # NEW_MODEL_TOP_FOLDER = '/gscratch/zlab/margsli/demix-checkpoints/models_test'
-CHECKPOINTS_TOP_FOLDER = '/checkpoint/suching/margaret_sweep_rerun/small/_EXPERIMENT\=dense_NUMSTEPS\=36000_LR\=0.001/'
+CHECKPOINTS_TOP_FOLDER = '/checkpoint/suching/margaret_sweep_rerun/small/'
 NEW_MODEL_TOP_FOLDER = '/checkpoint/suching/mod_sweep/_modular_gpt3_small_36K/modular_gpt3_small_36K_LR=0.001/'
 
 re_string = ''
@@ -31,7 +31,7 @@ grids = {
             "NUM_GPUS": [NUM_GPUS],
             "MODEL": ['transformer_lm_gpt3_small'],
             "DATA_BIN": [RUN_CONSTANTS.get('DATA_BIN')],
-            "DOMAIN_ID": [i for i in range(1,8)],
+            "DOMAIN_ID": [i for i in range(8)],
             "PARAMS_TO_FREEZE": ["None"],
             "COPYING_MODEL_FOLDER": [CHECKPOINTS_TOP_FOLDER],
             "NEW_MODEL_TOP_FOLDER": [NEW_MODEL_TOP_FOLDER],
