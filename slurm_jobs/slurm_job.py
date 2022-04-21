@@ -11,7 +11,7 @@ import sys
 import random
 import hashlib
 
-DEFAULT_DIR_PATH = '/gscratch/zlab/margsli/gitfiles/demix'
+DEFAULT_DIR_PATH = '/private/home/suching/demix/'
 BASH_IF_CLAUSE = """
 if [[ "$SLURM_ARRAY_TASK_ID" == "{index}" ]]; then
     srun -K1 bash {SAVE}/run.sh > {SAVE}/stdout.$SLURM_ARRAY_TASK_ID 2> {SAVE}/stderr.$SLURM_ARRAY_TASK_ID
@@ -385,13 +385,13 @@ def bash(bashCommand):
 def save_root(SWEEP_NAME, unixname):
     """Return root folder for saving model files, stdout, stderr, etc."""
     DATE = bash('date +"%Y%m%d"')
-    SAVE_ROOT = os.path.join('/gscratch/zlab/margsli/demix-checkpoints', DATE, SWEEP_NAME)
+    SAVE_ROOT = os.path.join('/checkpoint/suching/margaret_sweep_16_GPUs/', DATE, SWEEP_NAME)
     return SAVE_ROOT
 
 def log_root(SWEEP_NAME, unixname):
     """Return root folder for saving tensorboard logs"""
     DATE = bash('date +"%Y%m%d"')
-    LOG_ROOT = os.path.join('/gscratch/zlab/margsli/demix-checkpoints', DATE, SWEEP_NAME)
+    LOG_ROOT = os.path.join('/checkpoint/suching/margaret_sweep_16_GPUs/', DATE, SWEEP_NAME)
     return LOG_ROOT
 
 
@@ -476,7 +476,7 @@ def submit_array_jobs(
         SBATCH_EXTRAS.append('#SBATCH --dependency="{}"'.format(','.join(['afterok:' + str(d) for d in dependencies])))
 
     if conda_env_name:
-        conda_command = f'conda activate {conda_env_name}' else ''
+        conda_command = f'conda activate {conda_env_name}' if conda_env_name is not None else ''
 
     # make sure sbatch extras are a string
     SBATCH_EXTRAS = "\n".join(SBATCH_EXTRAS)

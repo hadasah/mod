@@ -11,20 +11,19 @@ Evaluate the perplexity of a trained language model.
 import logging
 import math
 import os
-import pandas as pd
 import sys
 from argparse import Namespace
 from typing import Iterable, List, Optional
 
 import torch
+from omegaconf import DictConfig
+
 import fairseq
 from fairseq import checkpoint_utils, distributed_utils, options, tasks, utils
 from fairseq.dataclass.utils import convert_namespace_to_omegaconf
 from fairseq.logging import progress_bar
 from fairseq.logging.meters import StopwatchMeter
 from fairseq.sequence_scorer import SequenceScorer
-from omegaconf import DictConfig
-
 
 logging.basicConfig(
     format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
@@ -43,11 +42,9 @@ def eval_lm(
     output_word_probs: bool = False,
     output_word_stats: bool = False,
     target_dictionary: Optional[fairseq.data.Dictionary] = None,
-    softmax_batch: int = False,
-    remove_domain_token: bool = False,
+    softmax_batch: int = 0,
+    remove_bos_token: bool = False,
     device: Optional[torch.device] = None,
-    use_expert: int = None,
-    max_samples: int  = None,
 ):
     """
     Args:
@@ -71,7 +68,7 @@ def eval_lm(
         softmax_batch (Optional[bool]): if BxT is more than this, will
             batch the softmax over vocab to this amount of tokens, in
             order to fit into GPU memory
-        remove_domain_token (Optional[bool]): if True, confirm that the
+        remove_bos_token (Optional[bool]): if True, confirm that the
             first token is the beginning-of-sentence symbol (according
             to the relevant dictionary) and remove it from the output
         device (Optional[torch.device]): device to use for evaluation
@@ -106,11 +103,9 @@ def eval_lm(
         bpe_len = 0
 
     word_stats = dict()
-    
-    for ix, sample in enumerate(batch_iterator):
-        if max_samples and ix > max_samples:
-            break
-        if not sample or "net_input" not in sample:
+
+    for sample in batch_iterator:
+        if "net_input" not in sample:
             continue
 
         sample = utils.move_to_cuda(sample, device=device)
@@ -127,8 +122,8 @@ def eval_lm(
             tgt_len = tokens.numel()
             pos_scores = hypo["positional_scores"].float()
 
-            if remove_domain_token:
-                #assert hypo["tokens"][0].item() == target_dictionary.bos()
+            if remove_bos_token:
+                assert hypo["tokens"][0].item() == target_dictionary.bos()
                 tokens = tokens[1:]
                 pos_scores = pos_scores[1:]
 
@@ -149,8 +144,7 @@ def eval_lm(
                 pos_scores = pos_scores[(~inf_scores).nonzero()]
             score_sum += pos_scores.sum().cpu()
             count += pos_scores.numel() - skipped_toks
-            ppl = 2 ** (-score_sum / count / math.log(2) if count > 0 else 0)
-            batch_iterator.tqdm.set_description("ppl: {:.2f}".format(ppl))
+
             if output_word_probs or output_word_stats:
                 w = ""
                 word_prob = []
@@ -187,48 +181,24 @@ def eval_lm(
                             )
                         )
                     )
-    if use_expert is not None:
-        if torch.distributed.get_rank() == use_expert:
-            avg_nll_loss = (
-                -score_sum / count / math.log(2) if count > 0 else 0
-            )  # convert to base 2
-            logger.info(
-                "Evaluated {:,} tokens in {:.1f}s ({:.2f} tokens/s)".format(
-                    gen_timer.n, gen_timer.sum, 1.0 / gen_timer.avg if gen_timer.avg > 0 else 0
-                )
-            )
 
-            if output_word_stats:
-                for ws in sorted(word_stats.values(), key=lambda x: x.count, reverse=True):
-                    logger.info(ws)
-
-            return {
-                "loss": avg_nll_loss,
-                "perplexity": 2 ** avg_nll_loss,
-                "unnormalized_score": -score_sum
-            }
-        else:
-            return {}
-
-    else:
-        avg_nll_loss = (
-                -score_sum / count / math.log(2) if count > 0 else 0
-            )  # convert to base 2
-        logger.info(
-            "Evaluated {:,} tokens in {:.1f}s ({:.2f} tokens/s)".format(
-                gen_timer.n, gen_timer.sum, 1.0 / gen_timer.avg if gen_timer.avg > 0 else 0
-            )
+    avg_nll_loss = (
+        -score_sum / count / math.log(2) if count > 0 else 0
+    )  # convert to base 2
+    logger.info(
+        "Evaluated {:,} tokens in {:.1f}s ({:.2f} tokens/s)".format(
+            gen_timer.n, gen_timer.sum, 1.0 / gen_timer.avg if gen_timer.avg > 0 else 0
         )
+    )
 
-        if output_word_stats:
-            for ws in sorted(word_stats.values(), key=lambda x: x.count, reverse=True):
-                logger.info(ws)
+    if output_word_stats:
+        for ws in sorted(word_stats.values(), key=lambda x: x.count, reverse=True):
+            logger.info(ws)
 
-        return {
-            "loss": avg_nll_loss,
-            "perplexity": 2 ** avg_nll_loss,
-            'unnormalized_score': -score_sum
-        }
+    return {
+        "loss": avg_nll_loss,
+        "perplexity": 2**avg_nll_loss,
+    }
 
 
 class WordStat(object):
@@ -280,11 +250,6 @@ def main(cfg: DictConfig, **unused_kwargs):
 
     # Load ensemble
     logger.info("loading model(s) from {}".format(cfg.common_eval.path))
-    if cfg.common_eval.is_moe and torch.distributed.is_initialized() and torch.distributed.get_world_size() > 1:
-        cfg.checkpoint.checkpoint_suffix = f"-rank-{torch.distributed.get_rank()}"
-        moe_freq = 1
-    else:
-        moe_freq = 0
     models, model_args, task = checkpoint_utils.load_model_ensemble_and_task(
         [cfg.common_eval.path],
         arg_overrides=eval(cfg.common_eval.model_overrides),
@@ -292,9 +257,6 @@ def main(cfg: DictConfig, **unused_kwargs):
         strict=(cfg.checkpoint.checkpoint_shard_count == 1),
         num_shards=cfg.checkpoint.checkpoint_shard_count,
         task=task,
-        moe_freq=moe_freq,
-        desynchronize=cfg.common_eval.is_moe and torch.distributed.is_initialized() and torch.distributed.get_world_size() > 1,
-        partial_load=cfg.common_eval.partial_load
     )
 
     use_fp16 = cfg.common.fp16
@@ -313,96 +275,64 @@ def main(cfg: DictConfig, **unused_kwargs):
 
     assert len(models) > 0
 
-    #logger.info(
-    #    "num. model params: {:,}".format(sum(p.numel() for p in models[0].parameters()))
-    #)
-    for x,y in models[0].named_parameters():
-        ffns = ['fc1', 'fc2']
-    #    ls = [f"layers.{x}" for x in range(0, 12, 8)]
-        if any(ffn in x for ffn in ffns):
-            y.expert = True
     logger.info(
-                    "num. shared model params: {} (num. trained: {})".format(
-                                    sum(p.numel() for p in models[0].parameters() if not getattr(p, "expert", False)),
-                                                sum(p.numel() for p in models[0].parameters() if not getattr(p, "expert", False) and p.requires_grad),
-                                                        )
-                        )
+        "num. model params: {:,}".format(sum(p.numel() for p in models[0].parameters()))
+    )
 
+    # Load dataset splits
+    task.load_dataset(cfg.dataset.gen_subset)
+    dataset = task.dataset(cfg.dataset.gen_subset)
     logger.info(
-                        "num. expert model params: {} (num. trained: {})".format(
-                                        sum(p.numel() for p in models[0].parameters() if getattr(p, "expert", False)),
-                                                    sum(p.numel() for p in models[0].parameters() if getattr(p, "expert", False) and p.requires_grad),
-                                                            )
-                            )
-    res = []
-    for gen_subset in cfg.dataset.gen_subset.split(','):
-        # Load dataset splits
-        task.load_dataset(gen_subset)
-        dataset = task.dataset(gen_subset)
-        logger.info(
-            "{} {} {:,} examples".format(
-                cfg.task.data, gen_subset, len(dataset)
-            )
+        "{} {} {:,} examples".format(
+            cfg.task.data, cfg.dataset.gen_subset, len(dataset)
         )
-        num_shards = max(
+    )
+
+    itr = task.eval_lm_dataloader(
+        dataset=dataset,
+        max_tokens=cfg.dataset.max_tokens or 36000,
+        batch_size=cfg.dataset.batch_size,
+        max_positions=utils.resolve_max_positions(
+            *[model.max_positions() for model in models]
+        ),
+        num_shards=max(
             cfg.dataset.num_shards,
             cfg.distributed_training.distributed_world_size,
-        )
-        shard_id = max(
+        ),
+        shard_id=max(
             cfg.dataset.shard_id,
             cfg.distributed_training.distributed_rank,
-        )
+        ),
+        num_workers=cfg.dataset.num_workers,
+        data_buffer_size=cfg.dataset.data_buffer_size,
+        context_window=cfg.eval_lm.context_window,
+    )
 
-        if cfg.common_eval.is_moe:
-            num_shards = 1
-            shard_id = 0
+    itr = progress_bar.progress_bar(
+        itr,
+        log_format=cfg.common.log_format,
+        log_interval=cfg.common.log_interval,
+        default_log_format=("tqdm" if not cfg.common.no_progress_bar else "simple"),
+    )
 
-        # if cfg.common_eval.use_experts is not None:
-        #     for layer in model.decoder.layers:
-        #         layer.use_experts = cfg.common_eval.use_experts
-            
-        itr = task.eval_lm_dataloader(
-            dataset=dataset,
-            max_tokens=cfg.dataset.max_tokens or 36000,
-            batch_size=cfg.dataset.batch_size,
-            max_positions=utils.resolve_max_positions(
-                *[model.max_positions() for model in models]
-            ),
-            num_shards=num_shards,
-            shard_id=shard_id,
-            num_workers=cfg.dataset.num_workers,
-            data_buffer_size=cfg.dataset.data_buffer_size,
-            context_window=cfg.eval_lm.context_window,
-        )
+    results = eval_lm(
+        models=models,
+        source_dictionary=task.source_dictionary,
+        batch_iterator=itr,
+        post_process=cfg.common_eval.post_process,
+        output_word_probs=cfg.eval_lm.output_word_probs,
+        output_word_stats=cfg.eval_lm.output_word_stats,
+        target_dictionary=task.target_dictionary,
+        softmax_batch=cfg.eval_lm.softmax_batch,
+        remove_bos_token=getattr(cfg.task, "add_bos_token", False),
+    )
 
-        itr = progress_bar.progress_bar(
-            itr,
-            log_format=cfg.common.log_format,
-            log_interval=cfg.common.log_interval,
-            default_log_format="tqdm",
+    logger.info(
+        "Loss (base 2): {:.4f}, Perplexity: {:.2f}".format(
+            results["loss"], results["perplexity"]
         )
+    )
 
-        results = eval_lm(
-            models=models,
-            source_dictionary=task.source_dictionary,
-            batch_iterator=itr,
-            post_process=cfg.common_eval.post_process,
-            output_word_probs=cfg.eval_lm.output_word_probs,
-            output_word_stats=cfg.eval_lm.output_word_stats,
-            target_dictionary=task.target_dictionary,
-            softmax_batch=cfg.eval_lm.softmax_batch,
-            remove_domain_token=cfg.common_eval.add_domain_token,
-            use_expert=None
-        )
-        if results:
-            print(
-                    gen_subset, " Loss (base 2): {:.4f}, Perplexity: {:.2f}, Score: {:.2f}".format(
-                    results["loss"], results["perplexity"], results['unnormalized_score']
-                )
-            )
-            res.append({"model": cfg.common_eval.path, "dataset": gen_subset, "ppl": results['perplexity'].item()})
-    df = pd.DataFrame(res)
-    df.to_json(cfg.common_eval.results_path, lines=True, orient='records')
     return results
 
 

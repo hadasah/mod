@@ -43,7 +43,7 @@ class SequenceScorer(object):
     def generate(self, models, sample, **kwargs):
         """Score a batch of translations."""
         net_input = sample["net_input"]
-        len_models = torch.distributed.get_world_size() if torch.distributed.is_initialized() else len(models)
+        len_models = torch.distributed.get_world_size() if torch.distributed.is_initialized() and kwargs.get('ensemble') else len(models)
 
         def batch_for_softmax(dec_out, target):
             # assumes decoder_out[0] is the only thing needed (may not be correct for future models!)
