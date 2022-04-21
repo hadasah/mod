@@ -6,5 +6,8 @@ CONSTANTS = {
         "MODEL_FOLDER":'/gscratch/zlab/margsli/demix-checkpoints/models/',
         "LOG_FOLDER": '/gscratch/zlab/margsli/demix-checkpoints/models/',
         "JQ_PATH":'~/jq-linux64',
+        "ENV_NAME": "",
+        "PARTITION_NAME":'',
+        "ACCOUNT_NAME": '',
     }
 }

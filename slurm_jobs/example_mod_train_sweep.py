@@ -19,7 +19,7 @@ NUM_GPUS = 1
 # CHECKPOINTS_TOP_FOLDER = '/gscratch/zlab/margsli/demix-checkpoints/models'
 # NEW_MODEL_TOP_FOLDER = '/gscratch/zlab/margsli/demix-checkpoints/models_test'
 CHECKPOINTS_TOP_FOLDER = '/gscratch/zlab/margsli/demix-checkpoints/models/_modular_gpt3_medium_16gpuday/modular_gpt3_medium_16gpuday_DOMAIN=1b_LR=0.001/'
-NEW_MODEL_TOP_FOLDER = '/gscratch/zlab/margsli/demix-checkpoints/models_test/_modular_gpt3_medium_16gpuday/modular_gpt3_medium_16gpuday_DOMAIN=1b_LR=0.001/'
+NEW_MODEL_TOP_FOLDER = f'/gscratch/zlab/margsli/demix-checkpoints/models_test/{SWEEP_NAME}/'
 
 re_string = ''
 FOLDERS = mod_checkpoint_utils.find_folders(CHECKPOINTS_TOP_FOLDER, re_string=re_string)
@@ -32,7 +32,7 @@ grids = {
             "NUM_GPUS": [NUM_GPUS],
             "MODEL": ['transformer_lm_gpt3_medium'],
             "DATA_BIN": [RUN_CONSTANTS.get('DATA_BIN')],
-            "DOMAIN_ID": [i for i in range(1,8)],
+            "DOMAIN_ID": [i for i in range(8)],
             "PARAMS_TO_FREEZE": ["None"],
             "COPYING_MODEL_FOLDER": [CHECKPOINTS_TOP_FOLDER],
             "NEW_MODEL_TOP_FOLDER": [NEW_MODEL_TOP_FOLDER],
@@ -69,5 +69,5 @@ for sweep_name, grid in grids.items():
         dry_mode=DRY_MODE,
         add_name='end',
         DIR_PATH=MOD_FOLDER,
-        
+        LOG_FOLDER=LOG_FOLDER,
     )
