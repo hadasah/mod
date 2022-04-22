@@ -8,7 +8,7 @@ LOAD_FROM_STEP=$4
 # Baseline type: either "full" (update all parameters during DAPT) or "feedforward" (update only feedforward network during DAPT)
 EXPERIMENT=$5
 # output of dapt'ed model
-SERIALIZATION_DIR=$6/DOMAIN_${DOMAIN_ID}
+SERIALIZATION_DIR=${6}_DOMAIN_${DOMAIN_ID}
 # suffix to append to output model path, e.g. "final" or "test"
 FILE_SUFFIX=$7
 # phase one ratio
@@ -20,14 +20,20 @@ NUM_GPUS=8
 # distributed port
 PORT=12345
 
-SERIALIZATION_DIR=$SERIALIZATION_DIR/$NUM_STEPS
 IDS_TO_DOMAINS=('1b' 'anonymized_openwebtext' 'anonymized_realnews' 'anonymized_reviews' 'cs' 'legal' 'med' 'reddit');
 DOMAIN=${IDS_TO_DOMAINS[$DOMAIN_ID]};
 domains=${DOMAIN};
 train_subset=train;
 valid_subset=valid_${DOMAIN};
 # wandb project name (to track experiment on wandb.ai)
-CHECKPOINT=$MODEL_DIR/checkpoint_1_${LOAD_FROM_STEP}-rank-${DOMAIN_ID}.pt
+if [[ $MODEL_DIR == *"demix"* ]]; then 
+	CHECKPOINT=$MODEL_DIR/checkpoint_1_${LOAD_FROM_STEP}-rank-${DOMAIN_ID}.pt;
+	SERIALIZATION_DIR=${SERIALIZATION_DIR}_MOD_STEPS_${NUM_STEPS}_PHASE1_DEMIX;
+elif [[ $MODEL_DIR == *"dense"* ]]; then
+	CHECKPOINT=$MODEL_DIR/checkpoint_1_${LOAD_FROM_STEP}.pt;
+	SERIALIZATION_DIR=${SERIALIZATION_DIR}_MOD_STEPS_${NUM_STEPS}_PHASE1_DENSE;
+fi
+
 if [[ $MODEL_DIR == *"small"* ]]; then
     ARCH=transformer_lm_gpt3_small;
     LR=1e-4;
@@ -130,7 +136,7 @@ if [[ $CHECKPOINT == *"demix"* ]]; then
                         #--memory-efficient-fp16 \
 			            #--unbalanced;
 elif [[ $CHECKPOINT == *"dense"* ]]; then
-        python fairseq_cli/train.py     \
+        python $MOD_FOLDER/fairseq_cli/train.py     \
                 $DATA_PATH     \
                 --task multidomain_language_modeling     \
                 --sample-break-mode none     \
@@ -138,8 +144,8 @@ elif [[ $CHECKPOINT == *"dense"* ]]; then
                 --log-interval $LOG_INTERVAL    \
                 --skip-invalid-size-inputs-valid-test     \
                 --validate-interval-updates $VALIDATION_INTERVAL     \
-                --save-interval-updates $SAVE_INTERVAL_UPDATES     \
-                --keep-interval-updates $KEEP_INTERVAL_UPDATES     \
+                --save-interval-updates 36000     \
+                --keep-interval-updates 36000    \
                 --no-epoch-checkpoints \
                 --arch $ARCH    \
                 --criterion cross_entropy    \
@@ -167,8 +173,9 @@ elif [[ $CHECKPOINT == *"dense"* ]]; then
                 --update-freq $UPDATE_FREQ \
                 --dropout 0.0 \
                 --finetune-from-model $CHECKPOINT \
-                --distributed-world-size 8 \
                 --memory-efficient-fp16 \
-                --distributed-port $PORT \
-                --unbalanced;
+                --unbalanced \
+		--distributed-world-size $NUM_GPUS \
+		--distributed-port $PORT \
+		
 fi
