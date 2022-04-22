@@ -14,10 +14,13 @@ PARAMS_TO_FREEZE=$5;
 OLD_DIR=$6
 # path to top-level directory to where you'd like to output the model
 SERIALIZATION_DIR=$7
+
 # Name of subdirectory for this sweep -- should be unique to this sweep
 SUBFOLDER_NAME=$8
 
 PHASE_ONE_RATIO=$9
+
+SERIALIZATION_DIR=$SERIALIZATION_DIR/$PHASE_ONE_RATIO
 
 NUM_STEPS=${10};
 UPDATE_FREQ=${11};
@@ -117,4 +120,6 @@ python $MOD_FOLDER/fairseq_cli/train.py  $DATA_PATH \
      --required-batch-size-multiple 1 \
      --memory-efficient-fp16 \
      --ddp-backend no_c10d \
+     --distributed-world-size $NUM_GPUS \
+     --distributed-port 12345 \
      --all-gather-list-size 32000 ;

@@ -9,10 +9,10 @@ if username not in CONSTANTS:
     raise Error("username isn't defined in slurm_constants file")
 RUN_CONSTANTS = CONSTANTS.get(username)
 MOD_FOLDER = RUN_CONSTANTS.get('MOD_FOLDER')
-SWEEP_NAME = "sweep_gpt3_small_to_mod"
+SWEEP_NAME = "sweep_gpt3_small_to_mod_suchin"
 DEBUG_MODE = False
 DRY_MODE = False
-name_keys = ["MODEL", "DOMAIN_ID", "PHASE_ONE_RATIO"]
+name_keys = ["MODEL", "DOMAIN_ID", "LOAD_FROM_STEP", "NUM_STEPS"]
 NUM_GPUS = 8
 NUM_NODES = 1
 # CHECKPOINTS_TOP_FOLDER = '/gscratch/zlab/margsli/demix-checkpoints/models'
@@ -24,24 +24,20 @@ re_string = ''
 FOLDERS = mod_checkpoint_utils.find_folders(CHECKPOINTS_TOP_FOLDER, re_string=re_string)
 print(FOLDERS)
 
+MODEL_DIR='/checkpoint/suching/margaret_sweep_rerun/small/_EXPERIMENT=demix_NUMSTEPS=36000_LR=0.001/'
+SERIALIZATION_DIR='/checkpoint/suching/suchin_mod/small/_EXPERIMENT=demix_NUMSTEPS=36000_LR=0.001/'
 grids = {
     SWEEP_NAME: {
         'fixed_args': '',
         'positional_args': {
-            "NUM_GPUS": [NUM_GPUS],
-            "MODEL": ['transformer_lm_gpt3_small'],
-            "DATA_BIN": [RUN_CONSTANTS.get('DATA_BIN')],
+            "DATA_PATH": [RUN_CONSTANTS.get('DATA_BIN')],
             "DOMAIN_ID": [i for i in range(8)],
-            "PARAMS_TO_FREEZE": ["None"],
-            "COPYING_MODEL_FOLDER": [CHECKPOINTS_TOP_FOLDER],
-            "NEW_MODEL_TOP_FOLDER": [NEW_MODEL_TOP_FOLDER],
-            "CHECKPOINTS_SUBFOLDER": FOLDERS,
-            "PHASE_ONE_RATIO": [0.25, 0.5, 0.75],
-            "NUM_STEPS": [36000],
-            "UPDATE_FREQ": [4],
-            "LR": [1e-3],
+            "MODEL_DIR": [MODEL_DIR],
+            "LOAD_FROM_STEP": [6000, 18000, 30000],
+            "EXPERIMENT": ["full"],
+            "SERIALIZATION_DIR": [SERIALIZATION_DIR],
+            "FILE_SUFFIX": ["test"],
             "WANDB_PROJECT": ['mod'],
-            "WANDB_ENTITY": ['scaling-demix'],
             "MOD_FOLDER": [MOD_FOLDER],
         },
         'named_args': {},
@@ -76,7 +72,7 @@ for sweep_name, grid in grids.items():
         name_keys,
         sweep_name,
         user=os.environ['USER'],
-        prefix=f'bash {MOD_FOLDER}/demix/modular_train.sh',
+        prefix=f'bash {MOD_FOLDER}/demix/mod.sh',
         gpus=NUM_GPUS,
         cpus=10,
         nodes=NUM_NODES,

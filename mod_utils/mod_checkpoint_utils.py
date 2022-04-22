@@ -1,6 +1,7 @@
 from fairseq.moe_checkpoint_utils import merge_expert_and_shared_state
 from argparse import ArgumentParser
 import os
+import re
 
 def find_folders(CHECKPOINTS_TOP_FOLDER, re_string=None):
     NEW_MODEL_FOLDERS = []
@@ -50,7 +51,7 @@ def main(CHECKPOINTS_TOP_FOLDER, NEW_MODEL_TOP_FOLDER, subfolder, phase_one_rati
             expert_state = torch.load(f, map_location=torch.device("cpu"))
         with open(re.sub('rank-[0-9]+', 'shared', expert_path), "rb") as f:
             shared_state = torch.load(f, map_location=torch.device("cpu"))
-        state = moe_checkpoint_utils.merge_expert_and_shared_state(expert_state, shared_state)
+        state = merge_expert_and_shared_state(expert_state, shared_state)
         filename = os.path.join(new_domain_folder_path, 'checkpoint_last.pt')
         with open(filename, 'wb') as f:
             torch.save(state, filename)
