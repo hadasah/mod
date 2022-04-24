@@ -129,6 +129,7 @@ if [[ $CHECKPOINT == *"demix"* ]]; then
 			--sync-type manual \
 			--memory-efficient-fp16 \
     			--unbalanced \
+			--pad-to-fixed-length \
                         --data-parallel-groups "0,1,2,3,4,5,6,7" \
 			--distributed-world-size $NUM_GPUS \
 			--distributed-port $PORT
@@ -175,6 +176,7 @@ elif [[ $CHECKPOINT == *"dense"* ]]; then
                 --finetune-from-model $CHECKPOINT \
                 --memory-efficient-fp16 \
                 --unbalanced \
+		--pad-to-fixed-length \
 		--distributed-world-size $NUM_GPUS \
 		--distributed-port $PORT \
 		

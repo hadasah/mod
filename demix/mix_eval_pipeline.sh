@@ -22,14 +22,17 @@ eval_top_k=${10}
 
 id=${11}
 
-exclude_expert=${12}
+num_steps=${12}
 
-only_use_expert=${13} 
+exclude_expert=${13}
 
-MOD_FOLDER=${14}
+only_use_expert=${14} 
 
-jq_path=${15}
+MOD_FOLDER=${15}
 
+jq_path=${16}
+
+echo $model_type
 OIFS=$IFS;
 IFS=','
 read -a model_checkpoint_ids <<< "$CHECKPOINT_IDS";
@@ -40,6 +43,7 @@ IDS_TO_DOMAINS=('1b' 'anonymized_openwebtext' 'anonymized_realnews' 'anonymized_
 target_domain=${IDS_TO_DOMAINS[$target_domain_ID]}
 
 model=;
+
 if [[ "$model_type" == "demix" ]]; then
     for i in $(seq 0 7); do 
         if ([[ "$exclude_expert" != "True" ]] || [[ "$i" != "$target_domain_ID" ]]) && ([[ "$only_use_expert" != "True" ]] || [[ "$i" == "$target_domain_ID" ]]) && [[ "${model_checkpoint_ids[$i]}" != "None" ]]; then
@@ -47,9 +51,16 @@ if [[ "$model_type" == "demix" ]]; then
         fi;
     done
 elif [[ "$model_type" == "modular" ]]; then
-    for i in $(seq 0 7); do 
+    if [[ "$generalist_model" != "None" ]]; then
+	start=1;
+    else start=0;
+    fi
+    for i in $(seq $start 7); do 
         if ([[ "$exclude_expert" != "True" ]] || [[ "$i" != "$target_domain_ID" ]])  && ([[ "$only_use_expert" != "True" ]] || [[ "$i" == "$target_domain_ID" ]]) && [[ "${model_checkpoint_ids[$i]}" != "None" ]]; then
-            model=${model}:${ROOT_MODEL_FOLDER}/${MODEL_FOLDER}${i}/checkpoint_${model_checkpoint_ids[$i]}.pt;
+            # /checkpoint/suching/suchin_mod/small/_EXPERIMENT\=dense_NUMSTEPS\=36000_LR\=0.001/_DOMAIN_3_MOD_STEPS_30000_PHASE1_DENSE
+            model=${model}:${ROOT_MODEL_FOLDER}/${MODEL_FOLDER}/_DOMAIN_${i}_MOD_STEPS_${num_steps}_PHASE1_DENSE/checkpoint_last.pt
+            # model=${model}:${ROOT_MODEL_FOLDER}/${MODEL_FOLDER}/DOMAIN_${i}/$num_steps/checkpoint_last-rank-0.pt
+            # model=${model}:${ROOT_MODEL_FOLDER}/${MODEL_FOLDER}${i}/checkpoint_${model_checkpoint_ids[$i]}.pt;
         fi;    
     done
 fi;
@@ -68,7 +79,7 @@ results_path=${ROOT_MODEL_FOLDER}/${MODEL_FOLDER}/${evals_folder}/${target_domai
 mkdir -p ${ROOT_MODEL_FOLDER}/${MODEL_FOLDER}/${evals_folder}/${target_domain};
 cd $MOD_FOLDER;
 # echo $results_path;
-# echo $model;
+echo $model;
 # echo $MOD_FOLDER;
 
 echo "estimating probabilities...";
@@ -103,9 +114,9 @@ python -u fairseq_cli/ensemble_eval_lm.py $data_path \
 --partial-load \
 --ensemble-type "updating_prior" \
 --results-path ${prior_results_path} \
+--max-samples 100 \
 --distributed-world-size $num_gpus \
---distributed-port 12345 \
---max-samples 100;
+--distributed-port 12345;
 
 # alias jq=~/jq-linux64;
 precomputed_prior=$(tail -n 1 ${prior_results_path} | ${jq_path} -rc '.exp_avg_posterior | join(",")');
@@ -142,7 +153,7 @@ python -u fairseq_cli/ensemble_eval_lm.py $data_path \
 --partial-load \
 --results-path ${results_path} \
 --ensemble-type ${ensemble_type} \
---distributed-world-size $num_gpus \
---distributed-port 12345 \
 --precomputed-prior ${precomputed_prior} \
---eval-topk ${eval_top_k};
+--eval-topk ${eval_top_k} \
+--distributed-world-size $num_gpus \
+--distributed-port 12345 ;
