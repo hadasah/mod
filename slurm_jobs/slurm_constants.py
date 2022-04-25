@@ -11,8 +11,8 @@ CONSTANTS = {
     "suching": {
         "DATA_BIN":'/private/home/suching/raw_data/data-bin-big/',
         "MOD_FOLDER":'/private/home/suching/mod/',
-        "MODEL_FOLDER":'/checkpoint/suching/suchin_mod/',
-        "LOG_FOLDER": '/checkpoint/suching/suchin_mod/',
+        "MODEL_FOLDER":'/checkpoint/suching/margaret_sweep_rerun/',
+        "LOG_FOLDER": '/checkpoint/suching/margaret_sweep_rerun/',
         "JQ_PATH":'jq',
         "SLURM_ACCOUNT": "fairusers",
         "SLURM_PARTITION": "devlab,learnlab"

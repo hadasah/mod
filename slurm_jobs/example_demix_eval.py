@@ -1,13 +1,23 @@
 from slurm_jobs.slurm_job import run_grid
-from slurm_constants_margaret_klone import *
+from slurm_jobs.slurm_constants import *
 import os
 import re
 
-SWEEP_NAME = "eval_sweep_gpt3_medium_demix"
+SWEEP_NAME = "eval_sweep_gpt3_small_demix"
 DEBUG_MODE = False
-DRY_MODE = True
+DRY_MODE = False
 name_keys = []
 NUM_GPUS = 8
+
+username = os.getlogin()
+if username not in CONSTANTS:
+        raise Error("username isn't defined in slurm_constants file")
+RUN_CONSTANTS = CONSTANTS.get(username)
+MOD_FOLDER = RUN_CONSTANTS.get('MOD_FOLDER')
+MODEL_FOLDER = RUN_CONSTANTS.get('MODEL_FOLDER') + "/small/"
+DATA_BIN = RUN_CONSTANTS.get('DATA_BIN')
+JQ_PATH = RUN_CONSTANTS.get('JQ_PATH')
+
 
 # This regex looks in MODEL_FOLDER's subfolders for matches
 WANTED_FOLDER_REGEX = '.*demix.*'
@@ -39,6 +49,7 @@ grids = {
             "GENERALIST_MODEL": ["None"],
             "TOP_K": [8],
             "EVAL_FOLDER_ID": [EVAL_FOLDER_ID],
+            "NUM_STEPS": ["None"],
             "EXCLUDE_EXPERT": ["False"],
             "ONLY_USE_DOMAIN_EXPERT": ['False'],
             "MOD_FOLDER": [MOD_FOLDER],
@@ -58,11 +69,11 @@ for sweep_name, grid in grids.items():
         user=os.environ['USER'],
         prefix=f'bash {EVAL_SCRIPT}',
         gpus=NUM_GPUS,
-        cpus=4,
+        cpus=10,
         nodes=1,
         #TODO change these
-        account='zlab',
-        partition='ckpt',
+        account=RUN_CONSTANTS['SLURM_ACCOUNT'],
+        partition=RUN_CONSTANTS['SLURM_PARTITION'],
         jobtime='2:00:00',
         mem_gb=40,
         job_id_start=1,
@@ -70,5 +81,5 @@ for sweep_name, grid in grids.items():
         dry_mode=DRY_MODE,
         DIR_PATH=MOD_FOLDER,
         #TODO change this
-        conda_env_name='latest',
+        conda_env_name='mod',
     )

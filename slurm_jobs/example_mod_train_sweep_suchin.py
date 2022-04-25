@@ -9,7 +9,7 @@ if username not in CONSTANTS:
     raise Error("username isn't defined in slurm_constants file")
 RUN_CONSTANTS = CONSTANTS.get(username)
 MOD_FOLDER = RUN_CONSTANTS.get('MOD_FOLDER')
-SWEEP_NAME = "sweep_gpt3_small_to_mod_suchin_demix"
+SWEEP_NAME = "sweep_gpt3_small_to_mod_suchin_dense"
 DEBUG_MODE = False
 DRY_MODE = False
 name_keys = ["MODEL", "DOMAIN_ID", "LOAD_FROM_STEP", "NUM_STEPS"]
@@ -24,16 +24,16 @@ re_string = ''
 FOLDERS = mod_checkpoint_utils.find_folders(CHECKPOINTS_TOP_FOLDER, re_string=re_string)
 print(FOLDERS)
 
-MODEL_DIR='/checkpoint/suching/margaret_sweep_rerun/small/_EXPERIMENT=demix_NUMSTEPS=36000_LR=0.001/'
-SERIALIZATION_DIR='/checkpoint/suching/suchin_mod/small/_EXPERIMENT=demix_NUMSTEPS=36000_LR=0.001_test/'
+MODEL_DIR='/checkpoint/suching/margaret_sweep_rerun/small/_EXPERIMENT=dense_NUMSTEPS=36000_LR=0.001/'
+SERIALIZATION_DIR='/checkpoint/suching/suchin_mod/small/_EXPERIMENT=dense_NUMSTEPS=36000_LR=0.001_test/'
 grids = {
     SWEEP_NAME: {
         'fixed_args': '',
         'positional_args': {
             "DATA_PATH": [RUN_CONSTANTS.get('DATA_BIN')],
-            "DOMAIN_ID": [2, 3],
+            "DOMAIN_ID": [i for i in range(8)],
             "MODEL_DIR": [MODEL_DIR],
-            "LOAD_FROM_STEP": [6000, 18000, 30000],
+            "LOAD_FROM_STEP": [18000],
             "EXPERIMENT": ["full"],
             "SERIALIZATION_DIR": [SERIALIZATION_DIR],
             "FILE_SUFFIX": ["test"],

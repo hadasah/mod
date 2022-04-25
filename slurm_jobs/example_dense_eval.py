@@ -1,27 +1,30 @@
 from slurm_jobs.slurm_job import run_grid
 import os
 import re
+from slurm_jobs.slurm_constants import *
+
 
 SWEEP_NAME = "eval_sweep_gpt3_medium_dense"
 DEBUG_MODE = False
-DRY_MODE = True
+DRY_MODE = False
 name_keys = []
-NUM_GPUS = 1
+NUM_GPUS = 8
 
-#TODO change this
-DATA_BIN = '/gscratch/zlab/margsli/gitfiles/demix-data/data-bin' 
-#TODO change this
-MOD_FOLDER = '/gscratch/zlab/margsli/gitfiles/mod'
-#TODO change this
-# Top level folder for the models -- looks below this for subfolders that contain checkpoints
-MODEL_FOLDER = '/gscratch/zlab/margsli/demix-checkpoints/models/'
-# MODEL_FOLDER = '/checkpoint/suching/margaret_sweep/medium/'
+username = os.getlogin()
+if username not in CONSTANTS:
+        raise Error("username isn't defined in slurm_constants file")
+RUN_CONSTANTS = CONSTANTS.get(username)
+MOD_FOLDER = RUN_CONSTANTS.get('MOD_FOLDER')
+MODEL_FOLDER = RUN_CONSTANTS.get('MODEL_FOLDER') + "/small/"
+DATA_BIN = RUN_CONSTANTS.get('DATA_BIN')
+JQ_PATH = RUN_CONSTANTS.get('JQ_PATH')
+
 # This regex looks in MODEL_FOLDER's subfolders for matches
 WANTED_FOLDER_REGEX = '.*dense.*'
 # Used to distinguish between my naming conventions for demix vs modular models
 MODEL_TYPE = 'dense'
 # Determines where the posteriors and results gets saved 
-EVAL_FOLDER_ID = 'Base_demix'
+EVAL_FOLDER_ID = 'Base_dense'
 # Comma separated list of the checkpoint IDs. 
 #Unfortunately this can't be set per job, I'm assuming we're always setting the right # updates
 CHECKPOINT_ID = 'best'
@@ -57,16 +60,16 @@ for sweep_name, grid in grids.items():
         user=os.environ['USER'],
         prefix=f'bash {EVAL_SCRIPT}',
         gpus=NUM_GPUS,
-        cpus=4,
+        cpus=10,
         nodes=1,
         #TODO change these
-        account='zlab',
-        partition='ckpt',
+        account=RUN_CONSTANTS['SLURM_ACCOUNT'],
+        partition=RUN_CONSTANTS['SLURM_PARTITION'],
         jobtime='2:00:00',
         mem_gb=40,
         job_id_start=1,
         debug_mode=DEBUG_MODE,
         dry_mode=DRY_MODE,
         DIR_PATH=MOD_FOLDER,
-        conda_env_name='latest',
+        conda_env_name='mod',
     )
