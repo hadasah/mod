@@ -140,6 +140,7 @@ def run_grid(
     hashname=False,
     fixedname=False,
     saveroot=None,
+    logroot=None,
     mem_gb=64,
     requeue=False,
     data_parallel=False,
@@ -194,7 +195,10 @@ def run_grid(
         SAVE_ROOT = save_root(sweep_name, user)
     else:
         SAVE_ROOT = saveroot
-    LOG_ROOT = log_root(sweep_name, user)
+    if logroot is None:
+        LOG_ROOT = log_root(sweep_name, user)
+    else:
+        LOG_ROOT = logroot
     Job = namedtuple('Job', ['cmd', 'name'])
     all_jobs = [Job(cmd=prefix, name='')]
 

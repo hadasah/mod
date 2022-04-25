@@ -8,7 +8,7 @@ if RUN_CONSTANTS is None:
     raise Error("username isn't defined in slurm_constants file")
 MOD_FOLDER = RUN_CONSTANTS.get('MOD_FOLDER')
 
-SWEEP_NAME = "sweep_gpt3_small"
+SWEEP_NAME = "original_gpt3_small"
 DEBUG_MODE = False
 DRY_MODE = False
 name_keys = ["EXPERIMENT", "MODEL", "LR", "NUM_STEPS"]
@@ -21,15 +21,15 @@ grids = {
             "NUM_GPUS": [NUM_GPUS],
             "DISTRIBUTED_PORT": [43212],
             "MODEL": ['transformer_lm_gpt3_small'],
-            "EXPERIMENT": ['dense', 'demix'],
+            "EXPERIMENT": ['demix', 'dense', ],
             "DATA_BIN": [RUN_CONSTANTS.get('DATA_BIN')],
             "COPYING_MODEL_FOLDER": ["None"],
             "MODEL_FOLDER": [RUN_CONSTANTS.get('MODEL_FOLDER')],
             "SUBFOLDER_NAME": [SWEEP_NAME],
             "PHASE_ONE_RATIO": ["None"],
-            "NUM_STEPS": [18000, 36000],
-            "UPDATE_FREQ": [32],
-            "LR": [1e-3],
+            "NUM_STEPS": [300000],
+            "UPDATE_FREQ": [8],
+            "LR": [5e-4],
             "WANDB_PROJECT": ['test'],
             "WANDB_ENTITY": ['scaling-demix'],
             "MOD_FOLDER": [MOD_FOLDER],
@@ -48,8 +48,9 @@ for sweep_name, grid in grids.items():
         gpus=NUM_GPUS,
         cpus=4,
         nodes=1,
+        logroot=RUN_CONSTANTS.get('LOG_FOLDER'),
         #TODO change these
-        account='bdata',
+        account='zlab',
         partition='gpu-rtx6k',
         jobtime='48:00:00',
         mem_gb=50,

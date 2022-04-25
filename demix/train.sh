@@ -50,8 +50,8 @@ KEEP_INTERVAL_UPDATES=-1;
 
 if [[ $ARCH == *"gpt3_small"* ]]; then
      CLIP_NORM=0.1;
-     SAVE_INTERVAL_UPDATES=100;
-     VALIDATION_INTERVAL=100;
+     SAVE_INTERVAL_UPDATES=6000;
+     VALIDATION_INTERVAL=3000;
      NUM_WARMUP_STEPS=$((${NUM_STEPS} * 8 / 100));
 elif [[ $ARCH == *"gpt3_medium"* ]]; then
      NUM_WARMUP_STEPS=$((${NUM_STEPS} * 8 / 100));
