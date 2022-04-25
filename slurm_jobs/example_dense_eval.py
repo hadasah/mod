@@ -4,7 +4,7 @@ import re
 from slurm_jobs.slurm_constants import *
 
 
-SWEEP_NAME = "eval_sweep_gpt3_medium_dense"
+SWEEP_NAME = "eval_sweep_gpt3_small_dense"
 DEBUG_MODE = False
 DRY_MODE = False
 name_keys = []

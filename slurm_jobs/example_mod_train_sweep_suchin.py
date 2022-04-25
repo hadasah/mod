@@ -33,7 +33,7 @@ grids = {
             "DATA_PATH": [RUN_CONSTANTS.get('DATA_BIN')],
             "DOMAIN_ID": [i for i in range(8)],
             "MODEL_DIR": [MODEL_DIR],
-            "LOAD_FROM_STEP": [18000],
+            "LOAD_FROM_STEP": [6000, 18000, 30000],
             "EXPERIMENT": ["full"],
             "SERIALIZATION_DIR": [SERIALIZATION_DIR],
             "FILE_SUFFIX": ["test"],

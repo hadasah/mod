@@ -82,7 +82,7 @@ VALIDATION_INTERVAL=500;
 
 
 CLIP_NORM=0.1;
-UPDATE_FREQ=4;
+UPDATE_FREQ=32;
 NUM_WARMUP_STEPS=$((${NUM_STEPS} * 8 / 100));
 
 
@@ -122,20 +122,16 @@ if [[ $CHECKPOINT == *"demix"* ]]; then
                         --eval-domains $domains \
                         --required-batch-size-multiple 1 \
                         --update-freq $UPDATE_FREQ \
-                        --dropout 0.0 \
                         --finetune-from-model $CHECKPOINT \
                         --desynchronize \
                         --untie-parameters feedforward \
-			--sync-type manual \
-			--memory-efficient-fp16 \
-    			--unbalanced \
-			--pad-to-fixed-length \
+                        --sync-type manual \
+                        --memory-efficient-fp16 \
+                        --unbalanced \
+                        --pad-to-fixed-length \
                         --data-parallel-groups "0,1,2,3,4,5,6,7" \
-			--distributed-world-size $NUM_GPUS \
-			--distributed-port $PORT
-                        #--sync-type manual \
-                        #--memory-efficient-fp16 \
-			            #--unbalanced;
+                        --distributed-world-size $NUM_GPUS \
+                        --distributed-port $PORT;
 elif [[ $CHECKPOINT == *"dense"* ]]; then
         python $MOD_FOLDER/fairseq_cli/train.py     \
                 $DATA_PATH     \
@@ -172,12 +168,11 @@ elif [[ $CHECKPOINT == *"dense"* ]]; then
                 --eval-domains $domains \
                 --required-batch-size-multiple 1 \
                 --update-freq $UPDATE_FREQ \
-                --dropout 0.0 \
                 --finetune-from-model $CHECKPOINT \
                 --memory-efficient-fp16 \
                 --unbalanced \
-		--pad-to-fixed-length \
-		--distributed-world-size $NUM_GPUS \
-		--distributed-port $PORT \
+                --pad-to-fixed-length \
+                --distributed-world-size $NUM_GPUS \
+                --distributed-port $PORT;
 		
 fi
