@@ -16,10 +16,10 @@ DRY_MODE = False
 name_keys = ["MODEL", "DOMAIN_ID", "PHASE_ONE_RATIO", "LR"]
 NUM_GPUS = 8
 NUM_NODES = 1
-CHECKPOINTS_TOP_FOLDER = '/gscratch/zlab/margsli/demix-checkpoints/models/suchin/'
-NEW_MODEL_TOP_FOLDER = '/gscratch/zlab/margsli/demix-checkpoints/models_test/suchin/'
-# CHECKPOINTS_TOP_FOLDER = '/checkpoint/suching/margaret_sweep_rerun/small/'
-# NEW_MODEL_TOP_FOLDER = '/checkpoint/suching/mod_sweep/_modular_gpt3_small_36K/modular_gpt3_small_36K_LR=0.001/'
+# CHECKPOINTS_TOP_FOLDER = '/gscratch/zlab/margsli/demix-checkpoints/models/suchin/'
+# NEW_MODEL_TOP_FOLDER = '/gscratch/zlab/margsli/demix-checkpoints/models_test/suchin/'
+CHECKPOINTS_TOP_FOLDER = '/checkpoint/suching/margaret_sweep_rerun/small/'
+NEW_MODEL_TOP_FOLDER = '/checkpoint/suching/mod_sweep/_modular_gpt3_small_36K/modular_gpt3_small_36K_LR=0.001/'
 
 re_string = ''
 FOLDERS = mod_checkpoint_utils.find_folders(CHECKPOINTS_TOP_FOLDER, re_string=re_string)
@@ -40,7 +40,7 @@ grids = {
             "PHASE_ONE_RATIO": [0.25, 0.5, 0.75],
             "NUM_STEPS": [36000],
             "UPDATE_FREQ": [4],
-            "LR": [5e-4],
+            "LR": [1e-3],
             "WANDB_PROJECT": ['mod'],
             "WANDB_ENTITY": ['scaling-demix'],
             "MOD_FOLDER": [MOD_FOLDER],
@@ -57,13 +57,13 @@ for sweep_name, grid in grids.items():
         user=os.environ['USER'],
         prefix=f'bash {MOD_FOLDER}/demix/modular_train.sh',
         gpus=NUM_GPUS,
-        cpus=5,
+        cpus=10,
         nodes=NUM_NODES,
         #TODO change these
         account=RUN_CONSTANTS.get('SLURM_ACCOUNT'),
         partition=RUN_CONSTANTS.get('SLURM_PARTITION'),
-        jobtime='48:00:00',
-        mem_gb=50,
+        jobtime='72:00:00',
+        mem_gb=480,
         job_id_start=1,
         debug_mode=DEBUG_MODE,
         dry_mode=DRY_MODE,
