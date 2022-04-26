@@ -8,7 +8,7 @@ if RUN_CONSTANTS is None:
     raise Error("username isn't defined in slurm_constants file")
 MOD_FOLDER = RUN_CONSTANTS.get('MOD_FOLDER')
 
-SWEEP_NAME = "new_gpt3_small"
+SWEEP_NAME = "new_no_fp16_gpt3_small"
 DEBUG_MODE = False
 DRY_MODE = False
 name_keys = ["EXPERIMENT", "MODEL", "LR", "NUM_STEPS"]
@@ -28,7 +28,7 @@ grids = {
             "SUBFOLDER_NAME": [SWEEP_NAME],
             "PHASE_ONE_RATIO": ["None"],
             "NUM_STEPS": [18000, 36000],
-            "UPDATE_FREQ": [32],
+            "UPDATE_FREQ": [8],
             "LR": [1e-3],
             "WANDB_PROJECT": ['test'],
             "WANDB_ENTITY": ['scaling-demix'],

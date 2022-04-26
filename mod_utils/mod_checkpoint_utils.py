@@ -3,6 +3,7 @@ from argparse import ArgumentParser
 import os
 import re
 
+
 def find_folders(CHECKPOINTS_TOP_FOLDER, re_string=None):
     NEW_MODEL_FOLDERS = []
     for name, folders, files in os.walk(CHECKPOINTS_TOP_FOLDER):
@@ -26,26 +27,49 @@ def add_args():
 
 def main(CHECKPOINTS_TOP_FOLDER, NEW_MODEL_TOP_FOLDER, subfolder, phase_one_ratio, domain_id):
     import shutil, torch
+    # is_master_process = (not torch.distributed.is_initialized()) or (
+    #     torch.distributed.is_initialized() and torch.distributed.get_rank() == 0
+    # )
+    # if not is_master_process:
+    #     return
+    distributed_rank = int(os.environ['SLURM_PROCID'])
+    if distributed_rank != 0:
+        return
     old_folder = os.path.join(CHECKPOINTS_TOP_FOLDER, subfolder)
     files = [f for f in os.listdir(old_folder) if os.path.isfile(os.path.join(old_folder, f))]
-    checkpoint_update_ids = [f[:-3].split('-')[0] for f in files]
-    update_nums = [int(f.split("_")[2]) for f in checkpoint_update_ids if f.count('_') == 2]
+    checkpoint_update_ids = list(set([f[:-3].split('-')[0] for f in files]))
+    print('checkpoint_update_ids', checkpoint_update_ids)
+    checkpoint_update_ids = [f for f in checkpoint_update_ids if f.count('_') == 2]
+    print('checkpoint_update_ids', checkpoint_update_ids)
+    update_nums = [int(f.split("_")[2]) for f in checkpoint_update_ids]
+    print(update_nums)
     max_update_num = max(update_nums)
+    print('max_update_num', max_update_num)
     src_update_num = int(phase_one_ratio * max_update_num)
-    src_checkpoint_update_id = checkpoint_update_ids[min(range(len(update_nums)), key = lambda i: abs(update_nums[i]-src_update_num))]
+    print('src_update_num', src_update_num)
+    sort_factor = 1
+    if phase_one_ratio > 0.5:
+        sort_factor = -1
+    zipped_name_and_num = [(a, b) for (a, b) in zip(update_nums, checkpoint_update_ids)]
+    zipped_name_and_num.sort(key=lambda i: sort_factor * i[0])
+    print('zipped_name_and_num', zipped_name_and_num)
+    src_checkpoint_update_id = zipped_name_and_num[min(range(len(zipped_name_and_num)), key=lambda i: abs(zipped_name_and_num[i][0]-src_update_num))][1]
+    print('src_checkpoint_update_id', src_checkpoint_update_id)
     if 'checkpoint_last.pt' in files: #dense
         # for domain_id in range(8):
         new_domain_folder_path = os.path.join(NEW_MODEL_TOP_FOLDER, subfolder, f'DOMAIN_ID={domain_id}')
-        print(new_domain_folder_path)
+        print('new_domain_folder_path', new_domain_folder_path)
         src_filename = os.path.join(old_folder, f'{src_checkpoint_update_id}.pt')
+        print('src_filename', src_filename)
         os.makedirs(new_domain_folder_path, exist_ok=True)
         filename = os.path.join(new_domain_folder_path, 'checkpoint_last.pt')
         shutil.copyfile(src_filename, filename)
     elif 'checkpoint_last-shared.pt' in files: #demix
         # for domain_id in range(8):
         new_domain_folder_path = os.path.join(NEW_MODEL_TOP_FOLDER, subfolder, f'DOMAIN_ID={domain_id}')
-        print(new_domain_folder_path)
+        print('new_domain_folder_path', new_domain_folder_path)
         expert_path = os.path.join(old_folder, f'{src_checkpoint_update_id}-rank-{domain_id}.pt')
+        print('expert_path', expert_path)
         os.makedirs(new_domain_folder_path, exist_ok=True)
         with open(expert_path, "rb") as f:
             expert_state = torch.load(f, map_location=torch.device("cpu"))

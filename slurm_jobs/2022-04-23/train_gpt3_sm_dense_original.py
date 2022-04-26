@@ -11,7 +11,7 @@ MOD_FOLDER = RUN_CONSTANTS.get('MOD_FOLDER')
 SWEEP_NAME = "original_gpt3_small"
 DEBUG_MODE = False
 DRY_MODE = False
-name_keys = ["EXPERIMENT", "MODEL", "LR", "NUM_STEPS"]
+name_keys = ["EXPERIMENT", "MODEL", "LR", "NUM_STEPS", "UPDATE_FREQ"]
 NUM_GPUS = 8
 
 grids = {
@@ -29,7 +29,7 @@ grids = {
             "PHASE_ONE_RATIO": ["None"],
             "NUM_STEPS": [300000],
             "UPDATE_FREQ": [8],
-            "LR": [5e-4],
+            "LR": [1e-3],
             "WANDB_PROJECT": ['test'],
             "WANDB_ENTITY": ['scaling-demix'],
             "MOD_FOLDER": [MOD_FOLDER],
@@ -59,4 +59,5 @@ for sweep_name, grid in grids.items():
         dry_mode=DRY_MODE,
         add_name='end',
         DIR_PATH=MOD_FOLDER,
+        conda_env_name=RUN_CONSTANTS.get('CONDA_ENV'),
     )

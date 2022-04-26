@@ -73,6 +73,11 @@ fi;
 
 RESET_DATALOADER_PHRASE='';
 # TRAIN_FROM_SCRATCH_PHRASE='';
+DISTRIBUTED_ARGS_PHRASE='';
+
+if [ $NUM_GPUS \> 1 ]; then
+     DISTRIBUTED_ARGS_PHRASE="--ddp-backend no_c10d --distributed-world-size $NUM_GPUS --distributed-port 12345";
+fi;
 
 if [[ $OLD_DIR != "None" ]]; then
      RESET_DATALOADER_PHRASE='--reset-dataloader';
@@ -117,9 +122,7 @@ python $MOD_FOLDER/fairseq_cli/train.py  $DATA_PATH \
      --warmup-updates $NUM_WARMUP_STEPS     \
      --update-freq $UPDATE_FREQ     \
      --batch-size-valid 2            \
+     $DISTRIBUTED_ARGS_PHRASE \
      --required-batch-size-multiple 1 \
      --memory-efficient-fp16 \
-     --ddp-backend no_c10d \
-     --distributed-world-size $NUM_GPUS \
-     --distributed-port 12345 \
      --all-gather-list-size 32000 ;

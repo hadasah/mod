@@ -54,4 +54,5 @@ for sweep_name, grid in grids.items():
         dry_mode=DRY_MODE,
         add_name='end',
         DIR_PATH=MOD_FOLDER,
+        conda_env=RUN_CONSTANTS.get('CONDA_ENV'),
     )

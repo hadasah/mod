@@ -6,9 +6,9 @@ CONSTANTS = {
         "MODEL_FOLDER":'/gscratch/zlab/margsli/demix-checkpoints/models/',
         "LOG_FOLDER": '/gscratch/zlab/margsli/demix-checkpoints/models/',
         "JQ_PATH":'~/jq-linux64',
-        "CONDA_ENV_NAME":'latest',
-        "SLURM_ACCOUNT":'zlab',
-        "SLURM_PARTITION":'gpu-rtx6k',
+        "SLURM_ACCOUNT": "zlab",
+        "SLURM_PARTITION": "gpu-rtx6k",
+        "CONDA_ENV": "latest",
     },
     # Suchin's FAIR account
     "suching": {
@@ -19,6 +19,6 @@ CONSTANTS = {
         "JQ_PATH":'jq',
         "SLURM_ACCOUNT": "fairusers",
         "SLURM_PARTITION": "devlab,learnlab",
-        "CONDA_ENV_NAME": "mod",
+        "CONDA_ENV": 'mod',
     }
 }
