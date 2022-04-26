@@ -25,7 +25,7 @@ FOLDERS = mod_checkpoint_utils.find_folders(CHECKPOINTS_TOP_FOLDER, re_string=re
 print(FOLDERS)
 
 MODEL_DIR='/checkpoint/suching/margaret_sweep_rerun/small/_EXPERIMENT=dense_NUMSTEPS=36000_LR=0.001/'
-SERIALIZATION_DIR='/checkpoint/suching/suchin_mod/small/_EXPERIMENT=dense_NUMSTEPS=36000_LR=0.001_test/'
+SERIALIZATION_DIR='/checkpoint/suching/suchin_mod/small/_EXPERIMENT=dense_NUMSTEPS=36000_LR=0.001_mod/'
 grids = {
     SWEEP_NAME: {
         'fixed_args': '',
@@ -33,7 +33,7 @@ grids = {
             "DATA_PATH": [RUN_CONSTANTS.get('DATA_BIN')],
             "DOMAIN_ID": [i for i in range(8)],
             "MODEL_DIR": [MODEL_DIR],
-            "LOAD_FROM_STEP": [6000, 18000, 30000],
+            "LOAD_FROM_STEP": [6000,18000,30000],
             "EXPERIMENT": ["full"],
             "SERIALIZATION_DIR": [SERIALIZATION_DIR],
             "FILE_SUFFIX": ["test"],

@@ -18,11 +18,12 @@ SERIALIZATION_DIR=$7
 # Name of subdirectory for this sweep -- should be unique to this sweep
 SUBFOLDER_NAME=$8
 
-PHASE_ONE_RATIO=$9
+LOAD_FROM_STEP=$9
 
-SERIALIZATION_DIR=$SERIALIZATION_DIR/$PHASE_ONE_RATIO
+SERIALIZATION_DIR=$SERIALIZATION_DIR/LOAD_FROM_STEP=$LOAD_FROM_STEP
 
-NUM_STEPS=${10};
+NUM_STEPS=${10}
+
 UPDATE_FREQ=${11};
 LR=${12};
 # name of wandb project to track model output (at wandb.ai)
@@ -71,25 +72,25 @@ elif [[ $ARCH == *"transformer_lm"* ]]; then
      NUM_WARMUP_STEPS=$((${NUM_STEPS} * 8 / 100));
 fi;
 
-RESET_DATALOADER_PHRASE='';
+RESET_DATALOADER_PHRASE='--reset-dataloader';
 # TRAIN_FROM_SCRATCH_PHRASE='';
 
-if [[ $OLD_DIR != "None" ]]; then
-     RESET_DATALOADER_PHRASE='--reset-dataloader';
-     python $MOD_FOLDER/mod_utils/mod_checkpoint_utils.py \
-          --old-folder $OLD_DIR \
-          --new-folder $SERIALIZATION_DIR \
-          --subfolder $SUBFOLDER_NAME \
-          --phase-one-ratio $PHASE_ONE_RATIO \
-          --domain-id $DOMAIN_ID;
-# else
-fi;
+# if [[ $OLD_DIR != "None" ]]; then
+#      RESET_DATALOADER_PHRASE='--reset-dataloader';
+#      python $MOD_FOLDER/mod_utils/mod_checkpoint_utils.py \
+#           --old-folder $OLD_DIR \
+#           --new-folder $SERIALIZATION_DIR \
+#           --subfolder $SUBFOLDER_NAME \
+#           --num-steps $LOAD_FROM_STEP \
+#           --domain-id $DOMAIN_ID;
+# # else
+# fi;
 
 python $MOD_FOLDER/fairseq_cli/train.py  $DATA_PATH \
      --arch $ARCH    \
      --task language_modeling \
      --wandb-project $WANDB_PROJECT \
-     --save-dir $SERIALIZATION_DIR/$SUBFOLDER_NAME/DOMAIN_ID=$DOMAIN_ID   \
+     --save-dir /checkpoint/suching/mod_sweep/_modular_gpt3_small_36K/modular_gpt3_small_36K_LR=0.001/_EXPERIMENT=dense_NUMSTEPS=36000_LR=0.001/DOMAIN_ID=0_NUM_STEPS=18000   \
      --params-to-freeze $PARAMS_TO_FREEZE \
      $RESET_DATALOADER_PHRASE \
      --sample-break-mode none \

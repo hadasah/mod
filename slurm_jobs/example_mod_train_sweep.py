@@ -10,9 +10,9 @@ if username not in CONSTANTS:
 RUN_CONSTANTS = CONSTANTS.get(username)
 MOD_FOLDER = RUN_CONSTANTS.get('MOD_FOLDER')
 SWEEP_NAME = "sweep_gpt3_small_to_mod"
-DEBUG_MODE = False
+DEBUG_MODE = True
 DRY_MODE = False
-name_keys = ["MODEL", "DOMAIN_ID", "PHASE_ONE_RATIO"]
+name_keys = ["MODEL", "DOMAIN_ID", "LOAD_FROM_STEP"]
 NUM_GPUS = 8
 NUM_NODES = 1
 # CHECKPOINTS_TOP_FOLDER = '/gscratch/zlab/margsli/demix-checkpoints/models'
@@ -23,7 +23,6 @@ NEW_MODEL_TOP_FOLDER = '/checkpoint/suching/mod_sweep/_modular_gpt3_small_36K/mo
 re_string = ''
 FOLDERS = mod_checkpoint_utils.find_folders(CHECKPOINTS_TOP_FOLDER, re_string=re_string)
 print(FOLDERS)
-
 grids = {
     SWEEP_NAME: {
         'fixed_args': '',
@@ -36,9 +35,9 @@ grids = {
             "COPYING_MODEL_FOLDER": [CHECKPOINTS_TOP_FOLDER],
             "NEW_MODEL_TOP_FOLDER": [NEW_MODEL_TOP_FOLDER],
             "CHECKPOINTS_SUBFOLDER": FOLDERS,
-            "PHASE_ONE_RATIO": [0.25, 0.5, 0.75],
+            "LOAD_FROM_STEP": [18000],
             "NUM_STEPS": [36000],
-            "UPDATE_FREQ": [4],
+            "UPDATE_FREQ": [32],
             "LR": [1e-3],
             "WANDB_PROJECT": ['mod'],
             "WANDB_ENTITY": ['scaling-demix'],

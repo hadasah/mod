@@ -20,32 +20,32 @@ def add_args():
     parser.add_argument('--old-folder', type=str)
     parser.add_argument('--new-folder', type=str)
     parser.add_argument('--subfolder', type=str)
-    parser.add_argument('--phase-one-ratio', type=float)
+    parser.add_argument('--num-steps', type=int)
     parser.add_argument('--domain-id', type=int)
     return parser.parse_args()
 
-def main(CHECKPOINTS_TOP_FOLDER, NEW_MODEL_TOP_FOLDER, subfolder, phase_one_ratio, domain_id):
+def main(CHECKPOINTS_TOP_FOLDER, NEW_MODEL_TOP_FOLDER, subfolder, num_steps, domain_id):
     import shutil, torch
     old_folder = os.path.join(CHECKPOINTS_TOP_FOLDER, subfolder)
     files = [f for f in os.listdir(old_folder) if os.path.isfile(os.path.join(old_folder, f))]
     checkpoint_update_ids = [f[:-3].split('-')[0] for f in files]
     update_nums = [int(f.split("_")[2]) for f in checkpoint_update_ids if f.count('_') == 2]
-    max_update_num = max(update_nums)
-    src_update_num = int(phase_one_ratio * max_update_num)
-    src_checkpoint_update_id = checkpoint_update_ids[min(range(len(update_nums)), key = lambda i: abs(update_nums[i]-src_update_num))]
+    # max_update_num = max(update_nums)
+    src_update_num = num_steps
+    # src_checkpoint_update_id = checkpoint_update_ids[min(range(len(update_nums)), key = lambda i: abs(update_nums[i]-src_update_num))]
     if 'checkpoint_last.pt' in files: #dense
         # for domain_id in range(8):
-        new_domain_folder_path = os.path.join(NEW_MODEL_TOP_FOLDER, subfolder, f'DOMAIN_ID={domain_id}')
+        new_domain_folder_path = os.path.join(NEW_MODEL_TOP_FOLDER, subfolder, f'DOMAIN_ID={domain_id}_NUM_STEPS={num_steps}')
         print(new_domain_folder_path)
-        src_filename = os.path.join(old_folder, f'{src_checkpoint_update_id}.pt')
+        src_filename = os.path.join(old_folder, f'checkpoint_1_{src_update_num}.pt')
         os.makedirs(new_domain_folder_path, exist_ok=True)
         filename = os.path.join(new_domain_folder_path, 'checkpoint_last.pt')
         shutil.copyfile(src_filename, filename)
     elif 'checkpoint_last-shared.pt' in files: #demix
         # for domain_id in range(8):
-        new_domain_folder_path = os.path.join(NEW_MODEL_TOP_FOLDER, subfolder, f'DOMAIN_ID={domain_id}')
+        new_domain_folder_path = os.path.join(NEW_MODEL_TOP_FOLDER, subfolder, f'DOMAIN_ID={domain_id}_NUM_STEPS={num_steps}')
         print(new_domain_folder_path)
-        expert_path = os.path.join(old_folder, f'{src_checkpoint_update_id}-rank-{domain_id}.pt')
+        expert_path = os.path.join(old_folder, f'checkpoint_1_{src_update_num}-rank-{domain_id}.pt')
         os.makedirs(new_domain_folder_path, exist_ok=True)
         with open(expert_path, "rb") as f:
             expert_state = torch.load(f, map_location=torch.device("cpu"))
@@ -59,4 +59,4 @@ def main(CHECKPOINTS_TOP_FOLDER, NEW_MODEL_TOP_FOLDER, subfolder, phase_one_rati
 
 if __name__=='__main__':
     args = add_args()
-    main(args.old_folder, args.new_folder, args.subfolder, args.phase_one_ratio, args.domain_id)
+    main(args.old_folder, args.new_folder, args.subfolder, args.num_steps, args.domain_id)
