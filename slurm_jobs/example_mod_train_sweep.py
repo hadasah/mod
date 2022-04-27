@@ -9,8 +9,8 @@ if username not in CONSTANTS:
     raise Error("username isn't defined in slurm_constants file")
 RUN_CONSTANTS = CONSTANTS.get(username)
 MOD_FOLDER = RUN_CONSTANTS.get('MOD_FOLDER')
-SWEEP_NAME = "sweep_gpt3_small_to_mod"
-DEBUG_MODE = True
+SWEEP_NAME = "sweep_gpt3_small_to_mod_margaret"
+DEBUG_MODE = False
 DRY_MODE = False
 name_keys = ["MODEL", "DOMAIN_ID", "LOAD_FROM_STEP"]
 NUM_GPUS = 8

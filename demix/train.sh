@@ -9,30 +9,23 @@ PORT=$2
 ARCH=$3
 # Baseline type: choice between demix, dense, unbalanced_dense, and domain_token
 EXPERIMENT=$4
+MODEL_DIR=$5
 # Path to data-bins
-DATA_PATH=$5
-# Old directory to copy checkpoints from -- can be "None" if training from scratch
-OLD_DIR=$6
-# path to top-level directory to where you'd like to output the model
-MODEL_DIR=$7
-# Name of subdirectory for this sweep -- should be unique to this sweep
-SUBFOLDER_NAME=$8
-
-PHASE_ONE_RATIO=$9
+DATA_PATH=$6
 # total number of updates
-NUM_STEPS=${10}
+NUM_STEPS=${7}
 # update frequency
-UPDATE_FREQ=${11}
+UPDATE_FREQ=${8}
 # learning rate
-LR=${12}
+LR=${9}
 # wandb project name for logging
-WANDB_PROJECT=${13}
+WANDB_PROJECT=${10}
 # wandb group name for logging (can be user name)
-WANDB_ENTITY=${14}
+WANDB_ENTITY=${11}
 # MOD code folder
-MOD_FOLDER=${15}
+MOD_FOLDER=${12}
 # identifier of this run in the sweep
-ID=${16}
+ID=${13}
 
 
 # list of domains you'd like to train on, that can be found in $DATA_PATH
@@ -40,18 +33,16 @@ domains=1b,cs,legal,med,anonymized_openwebtext,anonymized_realnews,reddit,anonym
 # validation datasets for each domain
 valid_subset=valid_1b,valid_cs,valid_legal,valid_med,valid_anonymized_openwebtext,valid_anonymized_realnews,valid_reddit,valid_anonymized_reviews;
 # name of wandb project to track model output (at wandb.ai)
-WANDB_PROJECT=gpt3_experiments;
-
 
 TOKENS_PER_SAMPLE=1024;
 BATCH_SIZE=2;
 LOG_INTERVAL=50;
-KEEP_INTERVAL_UPDATES=-1;
+KEEP_INTERVAL_UPDATES=30;
 
 if [[ $ARCH == *"gpt3_small"* ]]; then
      CLIP_NORM=0.1;
-     SAVE_INTERVAL_UPDATES=100;
-     VALIDATION_INTERVAL=100;
+     SAVE_INTERVAL_UPDATES=6000;
+     VALIDATION_INTERVAL=3000;
      NUM_WARMUP_STEPS=$((${NUM_STEPS} * 8 / 100));
 elif [[ $ARCH == *"gpt3_medium"* ]]; then
      NUM_WARMUP_STEPS=$((${NUM_STEPS} * 8 / 100));
@@ -109,22 +100,22 @@ elif [[ $NUM_GPUS == "128" ]]; then
      fi;
 fi;
 
-# if [[ $EXPERIMENT == *"demix"* ]]; then
-#      UPDATE_FREQ=$UPDATE_FREQ*$NUM_GPUS
-# fi;
-RESET_DATALOADER_PHRASE='';
-SERIALIZATION_DIR=${MODEL_DIR}/${SUBFOLDER_NAME}/${ID};
-
-if [[ $OLD_DIR != "None" ]]; then
-     RESET_DATALOADER_PHRASE='--reset-dataloader';
-     SERIALIZATION_DIR=${MODEL_DIR}/${SUBFOLDER_NAME};
-     python $MOD_FOLDER/mod_utils/mod_checkpoint_utils.py \
-          --old-folder $OLD_DIR \
-          --new-folder $MODEL_DIR \
-          --subfolder $SUBFOLDER_NAME \
-          --phase-one-ratio $PHASE_ONE_RATIO ;
-     
+if [[ $EXPERIMENT == *"demix"* ]]; then
+     UPDATE_FREQ=$UPDATE_FREQ*$NUM_GPUS
 fi;
+RESET_DATALOADER_PHRASE='';
+SERIALIZATION_DIR=${MODEL_DIR}/${ID};
+
+# if [[ $OLD_DIR != "None" ]]; then
+#      RESET_DATALOADER_PHRASE='--reset-dataloader';
+#      SERIALIZATION_DIR=${MODEL_DIR}/${SUBFOLDER_NAME};
+#      python $MOD_FOLDER/mod_utils/mod_checkpoint_utils.py \
+#           --old-folder $OLD_DIR \
+#           --new-folder $MODEL_DIR \
+#           --subfolder $SUBFOLDER_NAME \
+#           --phase-one-ratio $PHASE_ONE_RATIO ;
+     
+# fi;
 
 
 if [[ $EXPERIMENT == *"demix"* ]]; then

@@ -43,7 +43,7 @@ grids = {
             "MODEL_FOLDERS": selected_folders,
             "CHECKPOINT_ID": [CHECKPOINT_ID],
             "SPLIT": ['test'],
-            "DOMAIN_ID": [i for i in range(16)],
+            "DOMAIN_ID": [12, 10],
             "MOD_FOLDER": [MOD_FOLDER],
         },
         'named_args': {},
@@ -65,7 +65,7 @@ for sweep_name, grid in grids.items():
         #TODO change these
         account=RUN_CONSTANTS['SLURM_ACCOUNT'],
         partition=RUN_CONSTANTS['SLURM_PARTITION'],
-        jobtime='2:00:00',
+        jobtime='5:00:00',
         mem_gb=40,
         job_id_start=1,
         debug_mode=DEBUG_MODE,

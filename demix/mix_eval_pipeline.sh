@@ -58,8 +58,8 @@ elif [[ "$model_type" == "modular" ]]; then
     for i in $(seq $start 7); do 
         if ([[ "$exclude_expert" != "True" ]] || [[ "$i" != "$target_domain_ID" ]])  && ([[ "$only_use_expert" != "True" ]] || [[ "$i" == "$target_domain_ID" ]]) && [[ "${model_checkpoint_ids[$i]}" != "None" ]]; then
             # /checkpoint/suching/suchin_mod/small/_EXPERIMENT\=dense_NUMSTEPS\=36000_LR\=0.001/_DOMAIN_3_MOD_STEPS_30000_PHASE1_DENSE
-            #model=${model}:${ROOT_MODEL_FOLDER}/${MODEL_FOLDER}/_DOMAIN_${i}_MOD_STEPS_${num_steps}_PHASE1_DENSE/checkpoint_last.pt
-            model=${model}:${ROOT_MODEL_FOLDER}/${MODEL_FOLDER}/DOMAIN_${i}/${num_steps}/checkpoint_${model_checkpoint_ids[$i]}-rank-${i}.pt
+            model=${model}:${ROOT_MODEL_FOLDER}/${MODEL_FOLDER}/_DOMAIN_${i}_MOD_STEPS_${num_steps}_PHASE1_DENSE/checkpoint_last.pt
+            # model=${model}:${ROOT_MODEL_FOLDER}/${MODEL_FOLDER}/DOMAIN_${i}/${num_steps}/checkpoint_${model_checkpoint_ids[$i]}-rank-${i}.pt
 #/checkpoint/suching/suchin_mod//small//_EXPERIMENT=demix_mod_NUMSTEPS=36000_LR=0.001/DOMAIN_3/6000/
             # model=${model}:${ROOT_MODEL_FOLDER}/${MODEL_FOLDER}/DOMAIN_${i}/$num_steps/checkpoint_last-rank-0.pt
             # model=${model}:${ROOT_MODEL_FOLDER}/${MODEL_FOLDER}${i}/checkpoint_${model_checkpoint_ids[$i]}.pt;
