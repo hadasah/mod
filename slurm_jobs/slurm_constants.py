@@ -9,6 +9,9 @@ CONSTANTS = {
         "SLURM_ACCOUNT": "zlab",
         "SLURM_PARTITION": "gpu-rtx6k",
         "CONDA_ENV": "latest",
+        "NUM_CPUS": 5,
+        "MEM_GB": 50,
+        "JOBTIME": '48:00:00',
     },
     # Suchin's FAIR account
     "suching": {
@@ -20,5 +23,8 @@ CONSTANTS = {
         "SLURM_ACCOUNT": "fairusers",
         "SLURM_PARTITION": "devlab,learnlab",
         "CONDA_ENV": 'mod',
+        "NUM_CPUS": 10,
+        "MEM_GB": 480,
+        "JOBTIME": '72:00:00',
     }
 }

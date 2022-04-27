@@ -264,13 +264,13 @@ def run_grid(
                 new_jobs.append(Job(cmd=new_cmd, name=new_name))
         all_jobs = new_jobs
 
-    if add_name:
-        new_jobs = []
-        for job in all_jobs:
-            new_cmd = ' '.join((job.cmd, job.name))
-            new_name = job.name
-            new_jobs.append(Job(cmd=new_cmd, name=new_name))
-        all_jobs = new_jobs
+    # if add_name:
+    #     new_jobs = []
+    #     for job in all_jobs:
+    #         new_cmd = ' '.join((job.cmd, job.name))
+    #         new_name = job.name
+    #         new_jobs.append(Job(cmd=new_cmd, name=new_name))
+    #     all_jobs = new_jobs
 
     # Sample grid points
     if isinstance(max_num_jobs, int) and max_num_jobs < len(all_jobs):
@@ -293,13 +293,16 @@ def run_grid(
     job_id = job_id_start
     for job in all_jobs:
         for _ in range(num_copies):
+            new_cmd = job.cmd
             new_name = job.name[1:cutoff] if cutoff else job.name[1:]
             if include_job_id:
                 if fixedname:
                     new_name = fixedname
                 new_name += '/_jobid=' + str(job_id)
-            else:
-                new_cmd = '{} '.format(job.cmd)
+            # else:
+            #     new_cmd = '{} '.format(job.cmd)
+            if add_name:
+                new_cmd = ' '.join((new_cmd, new_name))
             final_jobs.append(Job(cmd=new_cmd, name=new_name))
             job_id += 1
 

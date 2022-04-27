@@ -29,7 +29,7 @@ grids = {
             "PHASE_ONE_RATIO": ["None"],
             "NUM_STEPS": [18000, 36000],
             "UPDATE_FREQ": [8],
-            "LR": [1e-3],
+            "LR": [1e-4],
             "WANDB_PROJECT": ['test'],
             "WANDB_ENTITY": ['scaling-demix'],
             "MOD_FOLDER": [MOD_FOLDER],
