@@ -9,23 +9,26 @@ if username not in CONSTANTS:
     raise Error("username isn't defined in slurm_constants file")
 RUN_CONSTANTS = CONSTANTS.get(username)
 MOD_FOLDER = RUN_CONSTANTS.get('MOD_FOLDER')
-SWEEP_NAME = "sweep_gpt3_small_to_mod_suchin_dense"
 DEBUG_MODE = False
 DRY_MODE = False
-name_keys = ["MODEL", "DOMAIN_ID", "LOAD_FROM_STEP", "NUM_STEPS"]
+name_keys = ["MODEL", "DOMAIN_ID", "NUM_GPUS", "UPDATE_FREQ", "BATCH_SIZE", "LOAD_FROM_STEP", "NUM_STEPS"]
 NUM_GPUS = 8
 NUM_NODES = 1
+SWEEP_NAME = f"sweep_gpt3_small_to_mod_suchin_PHASE1_64GPU_dense_{NUM_GPUS}_GPU"
+
 # CHECKPOINTS_TOP_FOLDER = '/gscratch/zlab/margsli/demix-checkpoints/models'
 # NEW_MODEL_TOP_FOLDER = '/gscratch/zlab/margsli/demix-checkpoints/models_test'
-CHECKPOINTS_TOP_FOLDER = '/checkpoint/suching/margaret_sweep_rerun/small/'
-NEW_MODEL_TOP_FOLDER = '/checkpoint/suching/mod_sweep/_modular_gpt3_small_36K/modular_gpt3_small_36K_LR=0.001/'
+# CHECKPOINTS_TOP_FOLDER = '/checkpoint/suching/margaret_sweep_rerun/small/'
+CHECKPOINTS_TOP_FOLDER = '/checkpoint/suching/suchin_mod/sweep_gpt3_small_64_GPUs/'
+NEW_MODEL_TOP_FOLDER = f'/checkpoint/suching/suchin_mod_{NUM_GPUS}_GPU/_modular_gpt3_small_36K/modular_gpt3_small_36K_LR=0.001/'
 
 re_string = ''
 FOLDERS = mod_checkpoint_utils.find_folders(CHECKPOINTS_TOP_FOLDER, re_string=re_string)
 print(FOLDERS)
 
-MODEL_DIR='/checkpoint/suching/margaret_sweep_rerun/small/_EXPERIMENT=dense_NUMSTEPS=36000_LR=0.001/'
-SERIALIZATION_DIR='/checkpoint/suching/suchin_mod/small/_EXPERIMENT=dense_NUMSTEPS=36000_LR=0.001_test/'
+# MODEL_DIR='/checkpoint/suching/margaret_sweep_rerun/small/_EXPERIMENT=dense_NUMSTEPS=36000_LR=0.001/'
+MODEL_DIR='/checkpoint/suching/suchin_mod/sweep_gpt3_small_64_GPUs/_EXPERIMENT=dense_NUMSTEPS=36000_LR=0.001/'
+SERIALIZATION_DIR=f'/checkpoint/suching/suchin_mod_PHASE1_64GPU_{NUM_GPUS}_GPU/small/_EXPERIMENT=dense_NUMSTEPS=36000_LR=0.001/'
 grids = {
     SWEEP_NAME: {
         'fixed_args': '',
@@ -38,6 +41,9 @@ grids = {
             "SERIALIZATION_DIR": [SERIALIZATION_DIR],
             "FILE_SUFFIX": ["test"],
             "WANDB_PROJECT": ['mod'],
+            "UPDATE_FREQ": [32],
+            "BATCH_SIZE": [2],
+            "NUM_GPUS": [NUM_GPUS],
             "MOD_FOLDER": [MOD_FOLDER],
         },
         'named_args': {},
@@ -80,8 +86,10 @@ for sweep_name, grid in grids.items():
         account=RUN_CONSTANTS.get('SLURM_ACCOUNT'),
         partition=RUN_CONSTANTS.get('SLURM_PARTITION'),
         jobtime='72:00:00',
-        mem_gb=480,
+        mem_gb=40,
         job_id_start=1,
+        volta=True,
+        volta32=False,
         debug_mode=DEBUG_MODE,
         dry_mode=DRY_MODE,
         add_name='end',

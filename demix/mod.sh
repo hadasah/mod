@@ -14,9 +14,12 @@ FILE_SUFFIX=$7
 # phase one ratio
 NUM_STEPS=$((36000 - ${LOAD_FROM_STEP}))
 WANDB_PROJECT=$8
-MOD_FOLDER=$9
+UPDATE_FREQ=$9
+BATCH_SIZE=${10}
+NUM_GPUS=${11}
+MOD_FOLDER=${12}
 # number of GPUs to train with, we default to eight GPUs
-NUM_GPUS=8
+# NUM_GPUS=1
 # distributed port
 PORT=12345
 
@@ -36,7 +39,7 @@ fi
 
 if [[ $MODEL_DIR == *"small"* ]]; then
     ARCH=transformer_lm_gpt3_small;
-    LR=1e-4;
+    LR=1e-3;
 elif [[ $MODEL_DIR == *"med"* ]]; then
     ARCH=transformer_lm_gpt3_medium;
     if [[ $ == *"demix"* ]]; then
@@ -76,13 +79,13 @@ elif [[ $ == *"transformer_lm"* ]]; then
 fi;
 
 TOKENS_PER_SAMPLE=1024;
-BATCH_SIZE=2;
+# BATCH_SIZE=2;
 LOG_INTERVAL=50;
 VALIDATION_INTERVAL=500;
 
 
 CLIP_NORM=0.1;
-UPDATE_FREQ=32;
+# UPDATE_FREQ=32;
 NUM_WARMUP_STEPS=$((${NUM_STEPS} * 8 / 100));
 
 
@@ -108,8 +111,8 @@ if [[ $CHECKPOINT == *"demix"* ]]; then
                         --adam-eps 10e-8 \
                         --weight-decay 0.1 \
                         --num-workers 2 \
-                        --max-sentences 2 \
-                        --max-sentences-valid 2 \
+                        --max-sentences $BATCH_SIZE \
+                        --max-sentences-valid $BATCH_SIZE \
                         --clip-norm $CLIP_NORM      \
                         --max-update $NUM_STEPS     \
                         --total-num-update $NUM_STEPS     \
@@ -154,8 +157,8 @@ elif [[ $CHECKPOINT == *"dense"* ]]; then
                 --adam-eps 10e-8 \
                 --weight-decay 0.1 \
                 --num-workers 2 \
-                --max-sentences 2 \
-                --max-sentences-valid 2 \
+                --max-sentences $BATCH_SIZE \
+                --max-sentences-valid $BATCH_SIZE \
                 --clip-norm $CLIP_NORM      \
                 --max-update $NUM_STEPS     \
                 --total-num-update $NUM_STEPS     \

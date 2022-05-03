@@ -12,26 +12,29 @@ MODEL_FOLDER = RUN_CONSTANTS.get('MODEL_FOLDER')
 DATA_BIN = RUN_CONSTANTS.get('DATA_BIN')
 JQ_PATH = RUN_CONSTANTS.get('JQ_PATH')
 
-SWEEP_NAME = "eval_sweep_gpt3_small_mod"
+SWEEP_NAME = "eval_sweep_gpt3_small_mod_1GPU_PHASE1_8GPU"
 DEBUG_MODE = False
 DRY_MODE = False
 name_keys = []
 NUM_GPUS = 8
 
+# /checkpoint/suching/suchin_mod_8_GPUs/small/_EXPERIMENT=dense_NUMSTEPS=36000_LR=0.001/_DOMAIN_5_MOD_STEPS_30000_PHASE1_DENSE
+
 # This regex looks in MODEL_FOLDER's subfolders for matches
-WANTED_FOLDER_REGEX = '.*mod.*'
+WANTED_FOLDER_REGEX = '.*'
 # Used to distinguish between my naming conventions for demix vs modular models
 MODEL_TYPE = 'modular'
 # Determines where the posteriors and results gets saved 
-EVAL_FOLDER_ID = 'Base_demix_MOD_STEPS_6000'
+EVAL_FOLDER_ID = 'Base_dense_MOD_STEPS_6000'
 # Comma separated list of the checkpoint IDs. 
 #Unfortunately this can't be set per job, I'm assuming we're always setting the right # updates
 CHECKPOINT_IDS = 'best,best,best,best,best,best,best,best'
-
 EVAL_SCRIPT = f'{MOD_FOLDER}/demix/mix_eval_pipeline.sh' if MODEL_TYPE in ['demix', 'modular'] else f'{MOD_FOLDER}/demix/eval_pipeline.sh'
 all_runs = os.listdir(MODEL_FOLDER + "/small/")
 regex = re.compile(WANTED_FOLDER_REGEX)
-selected_folders = [folder for folder in all_runs if regex.match(folder) if "demix" in folder]
+print(all_runs)
+selected_folders = [folder for folder in all_runs if regex.match(folder) and "dense" in folder]
+print(selected_folders)
 grids = {
     SWEEP_NAME: {
         'fixed_args': '',
@@ -41,11 +44,11 @@ grids = {
             "ROOT_MODEL_FOLDER": [MODEL_FOLDER + "/small/"],
             "MODEL_FOLDERS": selected_folders,
             "CHECKPOINT_IDS": [CHECKPOINT_IDS],
-            "DOMAIN_ID": [i for i in range(16)],
+            "DOMAIN_ID": [i for i in range(8)],
             "ENSEMBLE_TYPE": ['cached_prior'],
             "MODEL_TYPE": [MODEL_TYPE],
-            "GENERALIST_MODEL": ["/checkpoint/suching/margaret_sweep_rerun/small/_EXPERIMENT=dense_NUMSTEPS=36000_LR=0.001/checkpoint_1_30000.pt"],
-            # "GENERALIST_MODEL": ["None"],
+            # "GENERALIST_MODEL": ["/checkpoint/suching/margaret_sweep_rerun/small/_EXPERIMENT=dense_NUMSTEPS=36000_LR=0.001/checkpoint_1_30000.pt"],
+            "GENERALIST_MODEL": ["None"],
             "TOP_K": [8],
             "EVAL_FOLDER_ID": [EVAL_FOLDER_ID],
             "NUM_STEPS": [6000],

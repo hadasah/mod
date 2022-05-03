@@ -474,20 +474,16 @@ def submit_array_jobs(
 
     constraints = []
 
-    if volta32:
-        constraints.append('volta32gb')
-
     total_num_jobs = len(jobs_path) - 1
 
     # Request the number of GPUs (defaults to 1)
     if gpus > 0:
-        gpustr = '#SBATCH --gpus-per-node={}'.format(gpus)
+        gpustr = '#SBATCH --gres=gpu:{}'.format(gpus)
         SBATCH_EXTRAS.append(gpustr)
 
     if constraints:
         SBATCH_EXTRAS.append("#SBATCH -C '{}'".format('&'.join(constraints)))
-    
-    
+
     if comment:
         SBATCH_EXTRAS.append('#SBATCH --comment="{}"'.format(comment))
 
@@ -505,5 +501,4 @@ def submit_array_jobs(
     bash('mkdir -p ' + os.path.join(SAVE_ROOT, 'slurm_logs'))
     with open(SLURMFILE, 'w') as fw:
         fw.write(SLRM_JOB_ARRAY_TEMPLATE.format(**locals()).lstrip())
-        
     print(bash('sbatch --array=0-{} {}'.format(total_num_jobs, SLURMFILE)))

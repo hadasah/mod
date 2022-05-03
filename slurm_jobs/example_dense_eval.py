@@ -15,7 +15,7 @@ if username not in CONSTANTS:
         raise Error("username isn't defined in slurm_constants file")
 RUN_CONSTANTS = CONSTANTS.get(username)
 MOD_FOLDER = RUN_CONSTANTS.get('MOD_FOLDER')
-MODEL_FOLDER = RUN_CONSTANTS.get('MODEL_FOLDER') + "/small/"
+MODEL_FOLDER = RUN_CONSTANTS.get('MODEL_FOLDER') + "/sweep_gpt3_small_64_GPUs/"
 DATA_BIN = RUN_CONSTANTS.get('DATA_BIN')
 JQ_PATH = RUN_CONSTANTS.get('JQ_PATH')
 
