@@ -8,11 +8,17 @@ if RUN_CONSTANTS is None:
     raise Error("username isn't defined in slurm_constants file")
 MOD_FOLDER = RUN_CONSTANTS.get('MOD_FOLDER')
 
-SWEEP_NAME = "sweep_gpt3_small"
+MODEL = 'transformer_lm_gpt3_small'
+NUM_GPUS = {"transformer_lm_gpt3_small": 16, 
+            "transformer_lm_gpt3_medium": 32,
+            "transformer_lm_gpt3_large": 64,
+            "transformer_lm_gpt3_xl": 128
+            }[MODEL]
+NUM_NODES = NUM_GPUS // 8
+SWEEP_NAME = f"sweep_{MODEL}_{NUM_GPUS}_GPUs"
 DEBUG_MODE = True
 DRY_MODE = False
 name_keys = []
-NUM_GPUS = 8
 
 grids = {
     SWEEP_NAME: {
@@ -20,19 +26,18 @@ grids = {
         'positional_args': {
             "NUM_GPUS": [NUM_GPUS],
             "DISTRIBUTED_PORT": [43212],
-            "MODEL": ['transformer_lm_gpt3_small'],
+            "MODEL": [MODEL],
             "EXPERIMENT": ['dense'],
+            "MODEL_DIR": [RUN_CONSTANTS.get('MODEL_FOLDER')],
             "DATA_BIN": [RUN_CONSTANTS.get('DATA_BIN')],
-            "COPYING_MODEL_FOLDER": ["None"],
-            "NEW_MODEL_FOLDER": [RUN_CONSTANTS.get('MODEL_FOLDER')],
-            "SUBFOLDER_NAME": [SWEEP_NAME],
-            "PHASE_ONE_RATIO": ["None"],
-            "NUM_STEPS": [18000, 36000],
+            "NUM_STEPS": [50000, 55],
+            "SAVE_INTERVAL_UPDATES": [5000],
             "UPDATE_FREQ": [32],
-            "LR": [1e-4, 2e-4, 5e-4, 1e-3, 2e-3],
-            "WANDB_PROJECT": [''],
+            "LR": [5e-4, 55],
+            "WANDB_PROJECT": ['publication-test'],
             "WANDB_ENTITY": ['scaling-demix'],
             "MOD_FOLDER": [MOD_FOLDER],
+            "ID": [""]
         },
         'named_args': {},
     },
@@ -45,13 +50,14 @@ for sweep_name, grid in grids.items():
         sweep_name,
         user=os.environ['USER'],
         prefix=f'bash {MOD_FOLDER}/demix/train.sh',
-        gpus=NUM_GPUS,
-        cpus=RUN_CONSTANTS.get('NUM_CPUS'),
+        gpus=8,
+        cpus=10,
         nodes=NUM_NODES,
-        account=RUN_CONSTANTS.get('SLURM_ACCOUNT'),
-        partition=RUN_CONSTANTS.get('SLURM_PARTITION'),
-        jobtime=RUN_CONSTANTS.get('JOBTIME'),
-        mem_gb=RUN_CONSTANTS.get('MEM_GB'),
+        #TODO change these
+        account=RUN_CONSTANTS['SLURM_ACCOUNT'],
+        partition=RUN_CONSTANTS['SLURM_PARTITION'],
+        jobtime='48:00:00',
+        mem_gb=480,
         job_id_start=1,
         debug_mode=DEBUG_MODE,
         dry_mode=DRY_MODE,
