@@ -21,18 +21,20 @@ SUBFOLDER_NAME=$8
 PHASE_ONE_RATIO=$9
 # total number of updates
 NUM_STEPS=${10}
+# total number of updates
+SAVE_INTERVAL_UPDATES=${11}
 # update frequency
-UPDATE_FREQ=${11}
+UPDATE_FREQ=${12}
 # learning rate
-LR=${12}
+LR=${13}
 # wandb project name for logging
-WANDB_PROJECT=${13}
+WANDB_PROJECT=${14}
 # wandb group name for logging (can be user name)
-WANDB_ENTITY=${14}
+WANDB_ENTITY=${15}
 # MOD code folder
-MOD_FOLDER=${15}
+MOD_FOLDER=${16}
 # identifier of this run in the sweep
-ID=${16}
+ID=${17}
 
 
 # list of domains you'd like to train on, that can be found in $DATA_PATH
@@ -50,7 +52,6 @@ KEEP_INTERVAL_UPDATES=-1;
 
 if [[ $ARCH == *"gpt3_small"* ]]; then
      CLIP_NORM=0.1;
-     SAVE_INTERVAL_UPDATES=6000;
      VALIDATION_INTERVAL=3000;
      NUM_WARMUP_STEPS=$((${NUM_STEPS} * 8 / 100));
 elif [[ $ARCH == *"gpt3_medium"* ]]; then
@@ -163,7 +164,7 @@ if [[ $EXPERIMENT == *"demix"* ]]; then
           --train-domains $domains  \
           --eval-domains $domains \
           --required-batch-size-multiple 1 \
-          --memory-efficient-fp16 \
+          --fp16 \
           --distributed-world-size $NUM_GPUS \
           --distributed-port $PORT \
           --desynchronize --domain-parallel \
@@ -209,7 +210,7 @@ elif [[ $EXPERIMENT == *"unbalanced"* ]]; then
           --train-domains $domains  \
           --eval-domains $domains \
           --required-batch-size-multiple 1 \
-          --memory-efficient-fp16 \
+          --fp16 \
           --distributed-world-size $NUM_GPUS \
           --distributed-port $PORT \
           --all-gather-list-size 32000 \
@@ -251,7 +252,7 @@ elif [[ $EXPERIMENT == *"dense"* ]]; then
           --train-domains $domains  \
           --eval-domains $domains \
           --required-batch-size-multiple 1 \
-          --memory-efficient-fp16 \
+          --fp16 \
           --distributed-world-size $NUM_GPUS \
           --distributed-port $PORT \
           --ddp-backend no_c10d \
@@ -390,7 +391,7 @@ elif [[ $EXPERIMENT == *"domain_token"* ]]; then
           --train-domains $domains  \
           --eval-domains $domains \
           --required-batch-size-multiple 1 \
-          --memory-efficient-fp16 \
+          --fp16 \
           --distributed-world-size $NUM_GPUS \
           --distributed-port $PORT \
           --all-gather-list-size 32000 \
