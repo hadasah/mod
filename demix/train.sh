@@ -9,32 +9,26 @@ PORT=$2
 ARCH=$3
 # Baseline type: choice between demix, dense, unbalanced_dense, and domain_token
 EXPERIMENT=$4
+MODEL_DIR=$5
 # Path to data-bins
-DATA_PATH=$5
-# Old directory to copy checkpoints from -- can be "None" if training from scratch
-OLD_DIR=$6
-# path to top-level directory to where you'd like to output the model
-MODEL_DIR=$7
-# Name of subdirectory for this sweep -- should be unique to this sweep
-SUBFOLDER_NAME=$8
+DATA_PATH=$6
+# total number of updates
+NUM_STEPS=${7}
 
-PHASE_ONE_RATIO=$9
-# total number of updates
-NUM_STEPS=${10}
-# total number of updates
-SAVE_INTERVAL_UPDATES=${11}
+# save interval
+SAVE_INTERVAL_UPDATES=${8}
 # update frequency
-UPDATE_FREQ=${12}
+UPDATE_FREQ=${9}
 # learning rate
-LR=${13}
+LR=${10}
 # wandb project name for logging
-WANDB_PROJECT=${14}
+WANDB_PROJECT=${11}
 # wandb group name for logging (can be user name)
-WANDB_ENTITY=${15}
+WANDB_ENTITY=${12}
 # MOD code folder
-MOD_FOLDER=${16}
+MOD_FOLDER=${13}
 # identifier of this run in the sweep
-ID=${17}
+ID=${14}
 
 
 # list of domains you'd like to train on, that can be found in $DATA_PATH
@@ -42,13 +36,11 @@ domains=1b,cs,legal,med,anonymized_openwebtext,anonymized_realnews,reddit,anonym
 # validation datasets for each domain
 valid_subset=valid_1b,valid_cs,valid_legal,valid_med,valid_anonymized_openwebtext,valid_anonymized_realnews,valid_reddit,valid_anonymized_reviews;
 # name of wandb project to track model output (at wandb.ai)
-WANDB_PROJECT=gpt3_experiments;
-
 
 TOKENS_PER_SAMPLE=1024;
 BATCH_SIZE=2;
 LOG_INTERVAL=50;
-KEEP_INTERVAL_UPDATES=-1;
+KEEP_INTERVAL_UPDATES=30;
 
 if [[ $ARCH == *"gpt3_small"* ]]; then
      CLIP_NORM=0.1;
@@ -56,23 +48,19 @@ if [[ $ARCH == *"gpt3_small"* ]]; then
      NUM_WARMUP_STEPS=$((${NUM_STEPS} * 8 / 100));
 elif [[ $ARCH == *"gpt3_medium"* ]]; then
      NUM_WARMUP_STEPS=$((${NUM_STEPS} * 8 / 100));
-     SAVE_INTERVAL_UPDATES=3000;
      VALIDATION_INTERVAL=2000;
      CLIP_NORM=0.1;
 elif [[ $ARCH == *"gpt3_large"* ]]; then
      NUM_WARMUP_STEPS=$((${NUM_STEPS} * 8 / 100));
-     SAVE_INTERVAL_UPDATES=2000;
      VALIDATION_INTERVAL=1000;
      CLIP_NORM=0.1;
 elif [[ $ARCH == *"gpt3_xl"* ]]; then
      NUM_WARMUP_STEPS=$((${NUM_STEPS} * 8 / 100));
-     SAVE_INTERVAL_UPDATES=2000;
      VALIDATION_INTERVAL=500;
      CLIP_NORM=0.1;
 elif [[ $ARCH == *"transformer_lm"* ]]; then
      TOKENS_PER_SAMPLE=1024;
      CLIP_NORM=0.1;
-     SAVE_INTERVAL_UPDATES=12000;
      VALIDATION_INTERVAL=6000;
      NUM_WARMUP_STEPS=$((${NUM_STEPS} * 8 / 100));
 fi;
@@ -110,22 +98,22 @@ elif [[ $NUM_GPUS == "128" ]]; then
      fi;
 fi;
 
-# if [[ $EXPERIMENT == *"demix"* ]]; then
-#      UPDATE_FREQ=$UPDATE_FREQ*$NUM_GPUS
-# fi;
-RESET_DATALOADER_PHRASE='';
-SERIALIZATION_DIR=${MODEL_DIR}/${SUBFOLDER_NAME}/${ID};
-
-if [[ $OLD_DIR != "None" ]]; then
-     RESET_DATALOADER_PHRASE='--reset-dataloader';
-     SERIALIZATION_DIR=${MODEL_DIR}/${SUBFOLDER_NAME};
-     python $MOD_FOLDER/mod_utils/mod_checkpoint_utils.py \
-          --old-folder $OLD_DIR \
-          --new-folder $MODEL_DIR \
-          --subfolder $SUBFOLDER_NAME \
-          --phase-one-ratio $PHASE_ONE_RATIO ;
-     
+if [[ $EXPERIMENT == *"demix"* ]]; then
+     UPDATE_FREQ=$UPDATE_FREQ*$NUM_GPUS
 fi;
+RESET_DATALOADER_PHRASE='';
+SERIALIZATION_DIR=${MODEL_DIR}_${ID};
+
+# if [[ $OLD_DIR != "None" ]]; then
+#      RESET_DATALOADER_PHRASE='--reset-dataloader';
+#      SERIALIZATION_DIR=${MODEL_DIR}/${SUBFOLDER_NAME};
+#      python $MOD_FOLDER/mod_utils/mod_checkpoint_utils.py \
+#           --old-folder $OLD_DIR \
+#           --new-folder $MODEL_DIR \
+#           --subfolder $SUBFOLDER_NAME \
+#           --phase-one-ratio $PHASE_ONE_RATIO ;
+     
+# fi;
 
 
 if [[ $EXPERIMENT == *"demix"* ]]; then

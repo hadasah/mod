@@ -4,24 +4,29 @@ DATA_PATH=$1
 DOMAIN_ID=$2
 # Path to model
 MODEL_DIR=$3
-LOAD_FROM_STEP=$4
+ARCH=$4
+LOAD_FROM_STEP=$5
 # Baseline type: either "full" (update all parameters during DAPT) or "feedforward" (update only feedforward network during DAPT)
-EXPERIMENT=$5
+EXPERIMENT=$6
 # output of dapt'ed model
-SERIALIZATION_DIR=${6}_DOMAIN_${DOMAIN_ID}
+SERIALIZATION_DIR=${7}_DOMAIN_${DOMAIN_ID}
 # suffix to append to output model path, e.g. "final" or "test"
-FILE_SUFFIX=$7
+FILE_SUFFIX=$8
 # phase one ratio
-NUM_STEPS=$((36000 - ${LOAD_FROM_STEP}))
-WANDB_PROJECT=$8
-UPDATE_FREQ=$9
-BATCH_SIZE=${10}
-NUM_GPUS=${11}
-MOD_FOLDER=${12}
+TOTAL_STEPS=$9
+WANDB_PROJECT=${10}
+UPDATE_FREQ=${11}
+LR=${12}
+NUM_GPUS=${13}
+MOD_FOLDER=${14}
 # number of GPUs to train with, we default to eight GPUs
 # NUM_GPUS=1
 # distributed port
-PORT=12345
+PORT=${15}
+
+NUM_STEPS=$((${TOTAL_STEPS} - ${LOAD_FROM_STEP}))
+
+
 
 IDS_TO_DOMAINS=('1b' 'anonymized_openwebtext' 'anonymized_realnews' 'anonymized_reviews' 'cs' 'legal' 'med' 'reddit');
 DOMAIN=${IDS_TO_DOMAINS[$DOMAIN_ID]};
@@ -37,55 +42,13 @@ elif [[ $MODEL_DIR == *"dense"* ]]; then
 	SERIALIZATION_DIR=${SERIALIZATION_DIR}_MOD_STEPS_${NUM_STEPS}_PHASE1_DENSE;
 fi
 
-if [[ $MODEL_DIR == *"small"* ]]; then
-    ARCH=transformer_lm_gpt3_small;
-    LR=1e-3;
-elif [[ $MODEL_DIR == *"med"* ]]; then
-    ARCH=transformer_lm_gpt3_medium;
-    if [[ $ == *"demix"* ]]; then
-        NUM_STEPS=1000;
-        SAVE_INTERVAL_UPDATES=200;
-    elif [[ $ == *"dense"* ]]; then
-        NUM_STEPS=750;
-        SAVE_INTERVAL_UPDATES=200;
-    fi
-elif [[ $ == *"gpt3_large"* ]]; then
-    ARCH=transformer_lm_gpt3_large;
-    if [[ $ == *"demix"* ]]; then
-        NUM_STEPS=500;
-        SAVE_INTERVAL_UPDATES=200;
-    elif [[ $ == *"dense"* ]]; then
-        NUM_STEPS=300;
-        SAVE_INTERVAL_UPDATES=200;
-    fi;
-elif [[ $ == *"gpt3_xl"* ]]; then
-    ARCH=transformer_lm_gpt3_xl;
-    if [[ $ == *"demix"* ]]; then
-        NUM_STEPS=1250;
-        SAVE_INTERVAL_UPDATES=250;
-    elif [[ $ == *"dense"* ]]; then
-        NUM_STEPS=1000;
-        SAVE_INTERVAL_UPDATES=200;
-    fi;
-elif [[ $ == *"transformer_lm"* ]]; then
-    ARCH=transformer_lm;
-    if [[ $ == *"demix"* ]]; then
-        NUM_STEPS=1000;
-        SAVE_INTERVAL_UPDATES=200;
-    elif [[ $ == *"dense"* ]]; then
-        NUM_STEPS=750;
-        SAVE_INTERVAL_UPDATES=200;
-    fi
-fi;
-
 TOKENS_PER_SAMPLE=1024;
-# BATCH_SIZE=2;
+BATCH_SIZE=2;
 LOG_INTERVAL=50;
 VALIDATION_INTERVAL=500;
 
 
 CLIP_NORM=0.1;
-# UPDATE_FREQ=32;
 NUM_WARMUP_STEPS=$((${NUM_STEPS} * 8 / 100));
 
 
@@ -98,8 +61,8 @@ if [[ $CHECKPOINT == *"demix"* ]]; then
                         --log-interval $LOG_INTERVAL    \
                         --skip-invalid-size-inputs-valid-test     \
                         --validate-interval-updates $VALIDATION_INTERVAL     \
-                        --save-interval-updates 36000     \
-                        --keep-interval-updates 36000     \
+                        --save-interval-updates $TOTAL_STEPS     \
+                        --keep-interval-updates $TOTAL-STEPS     \
                         --no-epoch-checkpoints \
                         --arch $ARCH    \
                         --criterion cross_entropy    \
@@ -129,7 +92,7 @@ if [[ $CHECKPOINT == *"demix"* ]]; then
                         --desynchronize \
                         --untie-parameters feedforward \
                         --sync-type manual \
-                        --memory-efficient-fp16 \
+                        --fp16 \
                         --unbalanced \
                         --pad-to-fixed-length \
                         --data-parallel-groups "0,1,2,3,4,5,6,7" \
@@ -144,8 +107,8 @@ elif [[ $CHECKPOINT == *"dense"* ]]; then
                 --log-interval $LOG_INTERVAL    \
                 --skip-invalid-size-inputs-valid-test     \
                 --validate-interval-updates $VALIDATION_INTERVAL     \
-                --save-interval-updates 36000     \
-                --keep-interval-updates 36000    \
+                --save-interval-updates $TOTAL_STEPS     \
+                --keep-interval-updates $TOTAL_STEPS    \
                 --no-epoch-checkpoints \
                 --arch $ARCH    \
                 --criterion cross_entropy    \
@@ -172,7 +135,7 @@ elif [[ $CHECKPOINT == *"dense"* ]]; then
                 --required-batch-size-multiple 1 \
                 --update-freq $UPDATE_FREQ \
                 --finetune-from-model $CHECKPOINT \
-                --memory-efficient-fp16 \
+                --fp16 \
                 --unbalanced \
                 --pad-to-fixed-length \
                 --distributed-world-size $NUM_GPUS \
