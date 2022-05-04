@@ -8,10 +8,10 @@ if RUN_CONSTANTS is None:
     raise Error("username isn't defined in slurm_constants file")
 MOD_FOLDER = RUN_CONSTANTS.get('MOD_FOLDER')
 
-SWEEP_NAME = "sweep_gpt3_small"
-DEBUG_MODE = True
+SWEEP_NAME = "diff_pretrain_gpt3_small"
+DEBUG_MODE = False
 DRY_MODE = False
-name_keys = []
+name_keys = ["EXPERIMENT", "MODEL", "LR", "NUM_STEPS", "UPDATE_FREQ", 'DOMAIN_IDS']
 NUM_GPUS = 8
 
 grids = {
@@ -19,21 +19,22 @@ grids = {
         'fixed_args': '',
         'positional_args': {
             "NUM_GPUS": [NUM_GPUS],
-            "DISTRIBUTED_PORT": [43212],
             "MODEL": ['transformer_lm_gpt3_small'],
-            "EXPERIMENT": ['dense'],
+            "EXPERIMENT": ['dense', ],
             "DATA_BIN": [RUN_CONSTANTS.get('DATA_BIN')],
+            "PARAMS_TO_FREEZE": ["None"],
             "COPYING_MODEL_FOLDER": ["None"],
-            "NEW_MODEL_FOLDER": [RUN_CONSTANTS.get('MODEL_FOLDER')],
+            "MODEL_FOLDER": [RUN_CONSTANTS.get('MODEL_FOLDER')],
             "SUBFOLDER_NAME": [SWEEP_NAME],
             "PHASE_ONE_RATIO": ["None"],
-            "NUM_STEPS": [18000, 36000],
-            "UPDATE_FREQ": [32],
-            "LR": [1e-4, 2e-4, 5e-4, 1e-3, 2e-3],
-            "WANDB_PROJECT": [''],
+            "RESET_ITEMS": ["None"],
+            "NUM_STEPS": [300000],
+            "UPDATE_FREQ": [8],
+            "LR": [5e-4],
+            "WANDB_PROJECT": ['test'],
             "WANDB_ENTITY": ['scaling-demix'],
             "MOD_FOLDER": [MOD_FOLDER],
-            "DOMAIN_IDS": ["all"],
+            "DOMAIN_IDS": ['0', '1', '2']
         },
         'named_args': {},
     },
@@ -47,15 +48,18 @@ for sweep_name, grid in grids.items():
         user=os.environ['USER'],
         prefix=f'bash {MOD_FOLDER}/demix/train.sh',
         gpus=NUM_GPUS,
-        cpus=RUN_CONSTANTS.get('NUM_CPUS'),
-        nodes=NUM_NODES,
-        account=RUN_CONSTANTS.get('SLURM_ACCOUNT'),
-        partition=RUN_CONSTANTS.get('SLURM_PARTITION'),
-        jobtime=RUN_CONSTANTS.get('JOBTIME'),
-        mem_gb=RUN_CONSTANTS.get('MEM_GB'),
+        cpus=4,
+        nodes=1,
+        logroot=RUN_CONSTANTS.get('LOG_FOLDER'),
+        #TODO change these
+        account='zlab',
+        partition='gpu-rtx6k',
+        jobtime='48:00:00',
+        mem_gb=50,
         job_id_start=1,
         debug_mode=DEBUG_MODE,
         dry_mode=DRY_MODE,
         add_name='end',
         DIR_PATH=MOD_FOLDER,
+        conda_env_name=RUN_CONSTANTS.get('CONDA_ENV'),
     )

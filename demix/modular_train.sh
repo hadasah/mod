@@ -20,7 +20,6 @@ SUBFOLDER_NAME=$8
 PHASE_ONE_RATIO=$9
 # Must be either "None" or comma-separated list of some subset of [meters, dataloader, optimizer, lr-scheduler]
 RESET_ITEMS=${10}
-# SERIALIZATION_DIR=$SERIALIZATION_DIR/$PHASE_ONE_RATIO
 
 NUM_STEPS=${11};
 UPDATE_FREQ=${12};

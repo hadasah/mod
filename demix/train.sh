@@ -4,43 +4,72 @@ NUM_GPUS=$1
 # Number of nodes you'd like to train on (assuming 8 GPUs per node)
 NUM_NODES=$((${NUM_GPUS}/8))
 # Distributed port
-PORT=$2
 # Fairseq model name (e.g. transformer_lm; see https://github.com/kernelmachine/demix/blob/main/fairseq/models/transformer_lm.py for other options)
-ARCH=$3
+ARCH=$2
 # Baseline type: choice between demix, dense, unbalanced_dense, and domain_token
-EXPERIMENT=$4
+EXPERIMENT=$3
 # Path to data-bins
-DATA_PATH=$5
+DATA_PATH=$4
+
+PARAMS_TO_FREEZE=$5;
 # Old directory to copy checkpoints from -- can be "None" if training from scratch
 OLD_DIR=$6
 # path to top-level directory to where you'd like to output the model
-MODEL_DIR=$7
+SERIALIZATION_DIR=$7
 # Name of subdirectory for this sweep -- should be unique to this sweep
 SUBFOLDER_NAME=$8
-
+# Must be either "None" or comma-separated list of some subset of [meters, dataloader, optimizer, lr-scheduler]
 PHASE_ONE_RATIO=$9
-# total number of updates
-NUM_STEPS=${10}
-# update frequency
-UPDATE_FREQ=${11}
-# learning rate
-LR=${12}
-# wandb project name for logging
-WANDB_PROJECT=${13}
-# wandb group name for logging (can be user name)
-WANDB_ENTITY=${14}
-# MOD code folder
-MOD_FOLDER=${15}
-# identifier of this run in the sweep
-ID=${16}
 
+RESET_ITEMS=${10}
+SERIALIZATION_DIR=$SERIALIZATION_DIR/$SUBFOLDER_NAME
 
-# list of domains you'd like to train on, that can be found in $DATA_PATH
-domains=1b,cs,legal,med,anonymized_openwebtext,anonymized_realnews,reddit,anonymized_reviews;
-# validation datasets for each domain
-valid_subset=valid_1b,valid_cs,valid_legal,valid_med,valid_anonymized_openwebtext,valid_anonymized_realnews,valid_reddit,valid_anonymized_reviews;
+NUM_STEPS=${11};
+UPDATE_FREQ=${12};
+LR=${13};
 # name of wandb project to track model output (at wandb.ai)
+WANDB_PROJECT=${14};
+# name of wandb entity 
+WANDB_ENTITY=${15};
+
+MOD_FOLDER=${16};
+
+DOMAIN_IDS=${17};
+
+RUN_ID=${18}
+
 WANDB_PROJECT=gpt3_experiments;
+
+if [[ $DOMAIN_ID == *"all"* ]]; then
+     # list of domains you'd like to train on, that can be found in $DATA_PATH
+     domains=1b,anonymized_openwebtext,anonymized_realnews,anonymized_reviews,cs,legal,med,reddit;
+     # validation datasets for each domain
+     valid_subset=valid_1b,valid_cs,valid_legal,valid_med,valid_anonymized_openwebtext,valid_anonymized_realnews,valid_reddit,valid_anonymized_reviews;
+
+     DATA_PHRASE="$DATA_PATH \
+          --task multidomain_language_modeling 
+          --valid-subset $valid_subset \
+          --train-domains $domains  \
+          --eval-domains $domains \
+          --criterion desynchronized_cross_entropy     \
+          "
+# name of wandb project to track model output (at wandb.ai)
+else
+     IDS_TO_DOMAINS=('1b' 'anonymized_openwebtext' 'anonymized_realnews' 'anonymized_reviews' 'cs' 'legal' 'med' 'reddit');
+     DATA_PHRASE="";
+     OIFS=$IFS;
+     IFS=','
+     read -a domain_ids <<< "$DOMAIN_IDS";
+     IFS=$OIFS;
+     for id in "${domain_ids[@]}"; do
+          DATA_PHRASE="${DATA_PHRASE}:$DATA_PATH/${IDS_TO_DOMAINS[$id]}"
+     done;
+     DATA_PHRASE="${DATA_PHRASE#?} \
+          --task language_modeling \
+          --criterion cross_entropy     \
+          ";
+fi;
+echo $DATA_PHRASE;
 
 
 TOKENS_PER_SAMPLE=1024;
@@ -109,27 +138,42 @@ elif [[ $NUM_GPUS == "128" ]]; then
      fi;
 fi;
 
-# if [[ $EXPERIMENT == *"demix"* ]]; then
-#      UPDATE_FREQ=$UPDATE_FREQ*$NUM_GPUS
-# fi;
-RESET_DATALOADER_PHRASE='';
-SERIALIZATION_DIR=${MODEL_DIR}/${SUBFOLDER_NAME}/${ID};
 
-if [[ $OLD_DIR != "None" ]]; then
-     RESET_DATALOADER_PHRASE='--reset-dataloader';
-     SERIALIZATION_DIR=${MODEL_DIR}/${SUBFOLDER_NAME};
-     python $MOD_FOLDER/mod_utils/mod_checkpoint_utils.py \
-          --old-folder $OLD_DIR \
-          --new-folder $MODEL_DIR \
-          --subfolder $SUBFOLDER_NAME \
-          --phase-one-ratio $PHASE_ONE_RATIO ;
-     
+RESET_PHRASE='';
+DISTRIBUTED_ARGS_PHRASE='';
+OIFS=$IFS;
+IFS=','
+read -a reset_vals <<< "$RESET_ITEMS";
+IFS=$OIFS;
+
+if [ $NUM_GPUS \> 1 ]; then
+     DISTRIBUTED_ARGS_PHRASE="--ddp-backend no_c10d --distributed-world-size $NUM_GPUS --distributed-port 12345";
 fi;
 
+if [[ $OLD_DIR != "None" ]]; then
+     NEW_SUBFOLDER_PHRASE='';
+     if [[ $RUN_ID != "" ]]; then
+          NEW_SUBFOLDER_PHRASE="--new-subfolder $ID ";
+     fi;
+     python $MOD_FOLDER/mod_utils/mod_checkpoint_utils.py \
+          --old-folder $OLD_DIR \
+          --new-folder $SERIALIZATION_DIR \
+          --subfolder $SUBFOLDER_NAME \
+          $NEW_SUBFOLDER_PHRASE \
+          --phase-one-ratio $PHASE_ONE_RATIO \
+          --domain-id $DOMAIN_ID;
+fi;
+
+if [[ $RESET_ITEMS != "None" ]]; then
+     for item in "${reset_vals[@]}"; do
+          RESET_PHRASE="${RESET_PHRASE}--reset-${item} "
+     done;
+fi;
+echo $RESET_PHRASE;
 
 if [[ $EXPERIMENT == *"demix"* ]]; then
-     python $MOD_FOLDER/fairseq_cli/train.py $DATA_PATH \
-          --task multidomain_language_modeling \
+     python $MOD_FOLDER/fairseq_cli/train.py \
+          $DATA_PHRASE
           --sample-break-mode none \
           --log-format simple  \
           --log-interval $LOG_INTERVAL    \
@@ -155,24 +199,19 @@ if [[ $EXPERIMENT == *"demix"* ]]; then
           --total-num-update $NUM_STEPS     \
           --warmup-updates $NUM_WARMUP_STEPS     \
           --update-freq $UPDATE_FREQ     \
-          --save-dir ${SERIALIZATION_DIR}   \
+          --save-dir $SERIALIZATION_DIR/$RUN_ID/   \
           --batch-size-valid 2                        \
           --wandb-project $WANDB_PROJECT           \
           --wandb-entity $WANDB_ENTITY \
-          --valid-subset $valid_subset \
-          --train-domains $domains  \
-          --eval-domains $domains \
           --required-batch-size-multiple 1 \
-          --memory-efficient-fp16 \
-          --distributed-world-size $NUM_GPUS \
-          --distributed-port $PORT \
+          --fp16 \
           --desynchronize --domain-parallel \
-          --ddp-backend no_c10d \
+          $DISTRIBUTED_ARGS_PHRASE \
           --sync-type manual \
           --untie-parameters feedforward \
           --data-parallel-groups "${DATA_PARALLEL_GROUPS}" \
           --all-gather-list-size 32000 \
-          $RESET_DATALOADER_PHRASE \
+          $RESET_PHRASE \
           --pad-to-fixed-length;
 elif [[ $EXPERIMENT == *"unbalanced"* ]]; then
      python $MOD_FOLDER/fairseq_cli/train.py     $DATA_PATH \
@@ -202,7 +241,7 @@ elif [[ $EXPERIMENT == *"unbalanced"* ]]; then
           --total-num-update $NUM_STEPS     \
           --warmup-updates $NUM_WARMUP_STEPS     \
           --update-freq $UPDATE_FREQ     \
-          --save-dir ${SERIALIZATION_DIR}     \
+          --save-dir $SERIALIZATION_DIR/$RUN_ID/     \
           --batch-size-valid 2                        \
           --wandb-project $WANDB_PROJECT           \
           --valid-subset $valid_subset \
@@ -210,15 +249,12 @@ elif [[ $EXPERIMENT == *"unbalanced"* ]]; then
           --eval-domains $domains \
           --required-batch-size-multiple 1 \
           --memory-efficient-fp16 \
-          --distributed-world-size $NUM_GPUS \
-          --distributed-port $PORT \
+          $DISTRIBUTED_ARGS_PHRASE \
           --all-gather-list-size 32000 \
-          --ddp-backend no_c10d \
-          $RESET_DATALOADER_PHRASE \
+          $RESET_PHRASE \
           --unbalanced;
 elif [[ $EXPERIMENT == *"dense"* ]]; then
-     python $MOD_FOLDER/fairseq_cli/train.py     $DATA_PATH \
-          --task multidomain_language_modeling \
+     python $MOD_FOLDER/fairseq_cli/train.py $DATA_PHRASE \
           --sample-break-mode none \
           --log-format simple  \
           --log-interval $LOG_INTERVAL    \
@@ -227,7 +263,6 @@ elif [[ $EXPERIMENT == *"dense"* ]]; then
           --save-interval-updates $SAVE_INTERVAL_UPDATES     \
           --keep-interval-updates $KEEP_INTERVAL_UPDATES    \
           --arch $ARCH    \
-          --criterion desynchronized_cross_entropy     \
           --lr-scheduler polynomial_decay     \
           --num-workers 2 \
           --max-sentences $BATCH_SIZE \
@@ -244,18 +279,13 @@ elif [[ $EXPERIMENT == *"dense"* ]]; then
           --total-num-update $NUM_STEPS     \
           --warmup-updates $NUM_WARMUP_STEPS     \
           --update-freq $UPDATE_FREQ     \
-          --save-dir ${SERIALIZATION_DIR}     \
+          --save-dir $SERIALIZATION_DIR/$RUN_ID/     \
           --batch-size-valid 2                        \
           --wandb-project $WANDB_PROJECT           \
-          --valid-subset $valid_subset \
-          --train-domains $domains  \
-          --eval-domains $domains \
           --required-batch-size-multiple 1 \
-          --memory-efficient-fp16 \
-          --distributed-world-size $NUM_GPUS \
-          --distributed-port $PORT \
-          --ddp-backend no_c10d \
-          $RESET_DATALOADER_PHRASE \
+          --fp16 \
+          $DISTRIBUTED_ARGS_PHRASE \
+          $RESET_PHRASE \
           --all-gather-list-size 32000;
 elif [[ $EXPERIMENT == *"switch"* ]]; then
      python $MOD_FOLDER/fairseq_cli/train.py $DATA_PATH     \
@@ -285,7 +315,7 @@ elif [[ $EXPERIMENT == *"switch"* ]]; then
           --total-num-update $NUM_STEPS     \
           --warmup-updates $NUM_WARMUP_STEPS     \
           --wandb-project $WANDB_PROJECT \
-          --save-dir ${SERIALIZATION_DIR}         \
+          --save-dir $SERIALIZATION_DIR/$RUN_ID/         \
           --batch-size-valid 2                        \
           --train-domains $domains \
           --eval-domains $domains \
@@ -301,14 +331,11 @@ elif [[ $EXPERIMENT == *"switch"* ]]; then
           --moe-gate-loss-wt 0.01 \
           --moe-gate-loss-combine-method sum \
           --moe-second-expert-policy all \
-          --distributed-world-size $NUM_GPUS \
-          --distributed-port $PORT \
-          --ddp-backend no_c10d \
-          $RESET_DATALOADER_PHRASE \
+          $DISTRIBUTED_ARGS_PHRASE \
+          $RESET_PHRASE \
           --all-gather-list-size 32000;
 elif [[ $EXPERIMENT == *"gshard"* ]]; then
-     python $MOD_FOLDER/fairseq_cli/train.py $DATA_PATH     \
-          --task multidomain_language_modeling     \
+     python $MOD_FOLDER/fairseq_cli/train.py $DATA_PHRASE     \
           --sample-break-mode none     \
           --log-format simple     \
           --log-interval $LOG_INTERVAL    \
@@ -334,7 +361,7 @@ elif [[ $EXPERIMENT == *"gshard"* ]]; then
           --total-num-update $NUM_STEPS     \
           --warmup-updates $NUM_WARMUP_STEPS     \
           --wandb-project $WANDB_PROJECT \
-          --save-dir ${SERIALIZATION_DIR}         \
+          --save-dir $SERIALIZATION_DIR/$RUN_ID/         \
           --batch-size-valid 2                        \
           --train-domains $domains \
           --eval-domains $domains \
@@ -349,10 +376,8 @@ elif [[ $EXPERIMENT == *"gshard"* ]]; then
           --moe-gate-loss-wt 0.01 \
           --moe-gate-loss-combine-method sum \
           --moe-second-expert-policy all \
-          --distributed-world-size $NUM_GPUS \
-          --distributed-port $PORT \
-          --ddp-backend no_c10d \
-          $RESET_DATALOADER_PHRASE \
+          $DISTRIBUTED_ARGS_PHRASE \
+          $RESET_PHRASE \
           --all-gather-list-size 32000;
 elif [[ $EXPERIMENT == *"domain_token"* ]]; then
      # domain token
@@ -383,7 +408,7 @@ elif [[ $EXPERIMENT == *"domain_token"* ]]; then
           --total-num-update $NUM_STEPS     \
           --warmup-updates $NUM_WARMUP_STEPS     \
           --update-freq $UPDATE_FREQ     \
-          --save-dir ${SERIALIZATION_DIR}     \
+          --save-dir $SERIALIZATION_DIR/$RUN_ID/     \
           --batch-size-valid 2                        \
           --wandb-project $WANDB_PROJECT           \
           --valid-subset $valid_subset \
@@ -391,10 +416,8 @@ elif [[ $EXPERIMENT == *"domain_token"* ]]; then
           --eval-domains $domains \
           --required-batch-size-multiple 1 \
           --memory-efficient-fp16 \
-          --distributed-world-size $NUM_GPUS \
-          --distributed-port $PORT \
+          $DISTRIBUTED_ARGS_PHRASE \
           --all-gather-list-size 32000 \
-          --ddp-backend no_c10d \
-          $RESET_DATALOADER_PHRASE \
+          $RESET_PHRASE \
           --add-domain-token;
 fi;
