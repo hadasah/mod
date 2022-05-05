@@ -43,7 +43,7 @@ grids = {
             "RESET_ITEMS": ['dataloader,meters'],
             "NUM_STEPS": [36000],
             "UPDATE_FREQ": [32],
-            "LR": [1e-3],
+            "LR": [5e-4, 1e-3, 2e-3],
             "WANDB_PROJECT": ['test'],
             "WANDB_ENTITY": ['scaling-demix'],
             "MOD_FOLDER": [MOD_FOLDER],
