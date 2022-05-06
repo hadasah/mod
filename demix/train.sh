@@ -98,11 +98,11 @@ elif [[ $NUM_GPUS == "128" ]]; then
      fi;
 fi;
 
-if [[ $EXPERIMENT == *"demix"* ]]; then
-     UPDATE_FREQ=$UPDATE_FREQ*$NUM_GPUS
-fi;
+# if [[ $EXPERIMENT == *"demix"* ]]; then
+#      UPDATE_FREQ=$UPDATE_FREQ*$NUM_GPUS
+# fi;
 RESET_DATALOADER_PHRASE='';
-SERIALIZATION_DIR=${MODEL_DIR}_${ID};
+SERIALIZATION_DIR=${MODEL_DIR}/${ID};
 
 # if [[ $OLD_DIR != "None" ]]; then
 #      RESET_DATALOADER_PHRASE='--reset-dataloader';

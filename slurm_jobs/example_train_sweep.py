@@ -11,7 +11,8 @@ if RUN_CONSTANTS is None:
 MOD_FOLDER = RUN_CONSTANTS.get('MOD_FOLDER')
 
 MODEL = 'transformer_lm_gpt3_small'
-SPECS = {"transformer_lm_gpt3_small": {
+SPECS = {
+            "transformer_lm_gpt3_small": {
                 "NUM_GPUS": 16,
                 "NUM_STEPS": 80000,
                 "SAVE_INTERVAL_UPDATES": 8000,
@@ -35,17 +36,17 @@ grids = {
             "NUM_GPUS": [SPECS['NUM_GPUS']],
             "DISTRIBUTED_PORT": [np.random.randint(1024, 65535)],
             "MODEL": [MODEL],
-            "EXPERIMENT": ['dense'],
+            "EXPERIMENT": ['demix'],
             "MODEL_DIR": [RUN_CONSTANTS.get('MODEL_FOLDER')],
             "DATA_BIN": [RUN_CONSTANTS.get('DATA_BIN')],
             "NUM_STEPS": [SPECS['NUM_STEPS']],
             "SAVE_INTERVAL_UPDATES": [SPECS['SAVE_INTERVAL_UPDATES']],
-            "UPDATE_FREQ": [SPECS["UF"]], yes
+            "UPDATE_FREQ": [SPECS["UF"]],
             "LR": [SPECS["LR"]],
             "WANDB_PROJECT": ['publication-test'],
             "WANDB_ENTITY": ['scaling-demix'],
             "MOD_FOLDER": [MOD_FOLDER],
-            "ID": ["fp16"]
+            "ID": [""]
         },
         'named_args': {},
     },

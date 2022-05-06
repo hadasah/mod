@@ -8,19 +8,23 @@ SWEEP_NAME = "eval_sweep_gpt3_small_dense"
 DEBUG_MODE = False
 DRY_MODE = False
 name_keys = []
-NUM_GPUS = 8
-
+NUM_GPUS = 1
+NUM_NODES = 1
 username = os.getlogin()
 if username not in CONSTANTS:
         raise Error("username isn't defined in slurm_constants file")
 RUN_CONSTANTS = CONSTANTS.get(username)
 MOD_FOLDER = RUN_CONSTANTS.get('MOD_FOLDER')
-MODEL_FOLDER = RUN_CONSTANTS.get('MODEL_FOLDER') + "/sweep_gpt3_small_64_GPUs/"
+# MODEL_FOLDER = RUN_CONSTANTS.get('MODEL_FOLDER') + "/small/"
+
+MODEL_FOLDER = "/checkpoint/suching/mod_publication/"
+
+
 DATA_BIN = RUN_CONSTANTS.get('DATA_BIN')
 JQ_PATH = RUN_CONSTANTS.get('JQ_PATH')
 
 # This regex looks in MODEL_FOLDER's subfolders for matches
-WANTED_FOLDER_REGEX = '.*dense.*'
+WANTED_FOLDER_REGEX = '.*dense.*80000.*'
 # Used to distinguish between my naming conventions for demix vs modular models
 MODEL_TYPE = 'dense'
 # Determines where the posteriors and results gets saved 
@@ -43,7 +47,7 @@ grids = {
             "MODEL_FOLDERS": selected_folders,
             "CHECKPOINT_ID": [CHECKPOINT_ID],
             "SPLIT": ['test'],
-            "DOMAIN_ID": [i for i in range(16)],
+            "DOMAIN_ID": [i for i in range(1, 16)],
             "MOD_FOLDER": [MOD_FOLDER],
         },
         'named_args': {},
@@ -61,7 +65,7 @@ for sweep_name, grid in grids.items():
         prefix=f'bash {EVAL_SCRIPT}',
         gpus=NUM_GPUS,
         cpus=10,
-        nodes=1,
+        nodes=NUM_NODES,
         #TODO change these
         account=RUN_CONSTANTS['SLURM_ACCOUNT'],
         partition=RUN_CONSTANTS['SLURM_PARTITION'],

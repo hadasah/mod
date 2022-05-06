@@ -138,5 +138,5 @@ python $MOD_FOLDER/fairseq_cli/train.py  $DATA_PATH \
      --batch-size-valid 2            \
      $DISTRIBUTED_ARGS_PHRASE \
      --required-batch-size-multiple 1 \
-     --memory-efficient-fp16 \
+     --fp16 \
      --all-gather-list-size 32000 ;

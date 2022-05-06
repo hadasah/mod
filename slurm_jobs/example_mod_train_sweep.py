@@ -10,7 +10,7 @@ if username not in CONSTANTS:
 RUN_CONSTANTS = CONSTANTS.get(username)
 MOD_FOLDER = RUN_CONSTANTS.get('MOD_FOLDER')
 SWEEP_NAME = "test_gpt3_small_to_mod_margsli"
-DEBUG_MODE = True
+DEBUG_MODE = False
 DRY_MODE = False
 name_keys = ["MODEL",  "PHASE_ONE_RATIO", "RESET_ITEMS", "LR", "UPDATE_FREQ", "DOMAIN_ID"]
 NUM_GPUS = 1
