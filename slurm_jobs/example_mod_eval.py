@@ -44,7 +44,7 @@ grids = {
             "DOMAIN_ID": [i for i in range(16)],
             "ENSEMBLE_TYPE": ['cached_prior'],
             "MODEL_TYPE": [MODEL_TYPE],
-            "GENERALIST_MODEL": ["/checkpoint/suching/margaret_sweep_rerun/small/_EXPERIMENT=dense_NUMSTEPS=36000_LR=0.001/checkpoint_1_30000.pt"],
+            # "GENERALIST_MODEL": ["/checkpoint/suching/margaret_sweep_rerun/small/_EXPERIMENT=dense_NUMSTEPS=36000_LR=0.001/checkpoint_1_30000.pt"],
             # "GENERALIST_MODEL": ["None"],
             "TOP_K": [8],
             "EVAL_FOLDER_ID": [EVAL_FOLDER_ID],
