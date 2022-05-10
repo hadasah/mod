@@ -10,7 +10,7 @@ CONSTANTS = {
         "SLURM_PARTITION": "gpu-rtx6k",
         "CONDA_ENV": "latest",
         "NUM_CPUS": 5,
-        "MEM_GB": 50,
+        "MEM_GB": 42,
         "JOBTIME": '48:00:00',
     },
     # Suchin's FAIR account

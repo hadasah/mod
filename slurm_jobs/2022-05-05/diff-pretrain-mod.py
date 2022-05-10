@@ -9,14 +9,14 @@ if username not in CONSTANTS:
     raise Error("username isn't defined in slurm_constants file")
 RUN_CONSTANTS = CONSTANTS.get(username)
 MOD_FOLDER = RUN_CONSTANTS.get('MOD_FOLDER')
-SWEEP_NAME = "test_gpt3_small_to_mod3"
-DEBUG_MODE = True
+SWEEP_NAME = "diff_pretrain_gpt3_small_to_mod"
+DEBUG_MODE = False
 DRY_MODE = False
-name_keys = ["MODEL",  "PHASE_ONE_RATIO", "RESET_ITEMS", "LR", "UPDATE_FREQ", "DOMAIN_ID"]
-NUM_GPUS = 8
+name_keys = ["MODEL", "CHECKPOINTS_SUBFOLDER", "PHASE_ONE_UPDATE_NUM", "RESET_ITEMS", "LR", "UPDATE_FREQ", "DOMAIN_ID"]
+NUM_GPUS = 1
 NUM_NODES = 1
-CHECKPOINTS_TOP_FOLDER = '/checkpoint/suching/margaret_sweep_rerun/small/'
-NEW_MODEL_TOP_FOLDER = '/checkpoint/suching/mod_sweep/_modular_gpt3_small_36K/modular_gpt3_small_36K_LR=0.001/'
+CHECKPOINTS_TOP_FOLDER = '/gscratch/zlab/margsli/demix-checkpoints/models/diff_pretrain_gpt3_small/MODEL=transformerlmgpt3small_EXPERIMENT=dense_NUMSTEPS=300000_UPDATEFREQ=8_LR=0.0005_DOMAINIDS=1/'
+NEW_MODEL_TOP_FOLDER = '/gscratch/zlab/margsli/demix-checkpoints/models/diff_pretrain_gpt3_small_to_mod/MODEL=transformerlmgpt3small_EXPERIMENT=dense_NUMSTEPS=300000_UPDATEFREQ=8_LR=0.0005_DOMAINIDS=1/'
 
 re_string = ''
 FOLDERS = mod_checkpoint_utils.find_folders(CHECKPOINTS_TOP_FOLDER, re_string=re_string)
@@ -36,12 +36,12 @@ grids = {
             "COPYING_MODEL_FOLDER": [CHECKPOINTS_TOP_FOLDER],
             "NEW_MODEL_TOP_FOLDER": [NEW_MODEL_TOP_FOLDER],
             "CHECKPOINTS_SUBFOLDER": FOLDERS,
-            "PHASE_ONE_RATIO": [0.5],
-            "PHASE_ONE_UPDATE_NUM": ["None"],
-            "RESET_ITEMS": ['dataloader,meters'],
-            "NUM_STEPS": [36000],
-            "UPDATE_FREQ": [32],
-            "LR": [5e-4,1e-3,2e-3],
+            "PHASE_ONE_RATIO": ["None"],
+            "PHASE_ONE_UPDATE_NUM": [72000],
+            "RESET_ITEMS": ['dataloader,meters,optimizer'],
+            "NUM_STEPS": [300000],
+            "UPDATE_FREQ": [8],
+            "LR": [5e-4],
             "WANDB_PROJECT": ['test'],
             "WANDB_ENTITY": ['scaling-demix'],
             "MOD_FOLDER": [MOD_FOLDER],

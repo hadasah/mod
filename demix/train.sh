@@ -1,69 +1,81 @@
-
+SWEEP_NAME=$1
 # Number of GPUs you'd like to train on
-NUM_GPUS=$1
+NUM_GPUS=$2
 # Number of nodes you'd like to train on (assuming 8 GPUs per node)
 NUM_NODES=$((${NUM_GPUS}/8))
 # Distributed port
 # Fairseq model name (e.g. transformer_lm; see https://github.com/kernelmachine/demix/blob/main/fairseq/models/transformer_lm.py for other options)
-ARCH=$2
+ARCH=$3
 # Baseline type: choice between demix, dense, unbalanced_dense, and domain_token
-EXPERIMENT=$3
+EXPERIMENT=$4
 # Path to data-bins
-DATA_PATH=$4
-
-PARAMS_TO_FREEZE=$5;
+DATA_PATH=$5
+# Comma separated list of demix domains to train on. "all" or, e.g. "0,1"
+DOMAIN_ID=$6;
+# Comma separated list of parameters to freeze, or "None"
+PARAMS_TO_FREEZE=$7;
 # Old directory to copy checkpoints from -- can be "None" if training from scratch
-OLD_DIR=$6
+OLD_DIR=$8
 # path to top-level directory to where you'd like to output the model
-SERIALIZATION_DIR=$7
-# Name of subdirectory for this sweep -- should be unique to this sweep
-SUBFOLDER_NAME=$8
-# Must be either "None" or comma-separated list of some subset of [meters, dataloader, optimizer, lr-scheduler]
-PHASE_ONE_RATIO=$9
-
-RESET_ITEMS=${10}
-SERIALIZATION_DIR=$SERIALIZATION_DIR/$SUBFOLDER_NAME
-
-NUM_STEPS=${11};
-UPDATE_FREQ=${12};
-LR=${13};
+SERIALIZATION_DIR=$9
+# Name of subdirectory containing checkpoint to copy
+SUBFOLDER_NAME=${10}
+# Ratio of updates to spend in first phase training - "None" or a float, e.g. 0.5
+PHASE_ONE_RATIO=${11}
+# Number of updates to spend in first phase training - "None" or an int, e.g. 36000
+PHASE_ONE_UPDATE_NUM=${12}
+# comma separated list of items to reset in checkpoint (dataloader,meters,lr-scheduler,optimizer), or "None"
+RESET_ITEMS=${13};
+# total number of steps in training -- determines lr schedule
+NUM_STEPS=${14};
+# update frequency
+UPDATE_FREQ=${15};
+# learning rate
+LR=${16};
 # name of wandb project to track model output (at wandb.ai)
-WANDB_PROJECT=${14};
+WANDB_PROJECT=${17};
 # name of wandb entity 
-WANDB_ENTITY=${15};
+WANDB_ENTITY=${18};
+# path to mod code folder
+MOD_FOLDER=${19};
+# Unique identifer of this run
+RUN_ID=${20}
 
-MOD_FOLDER=${16};
 
-DOMAIN_IDS=${17};
+export WANDB_NAME=$SWEEP_NAME/$RUN_ID;
 
-RUN_ID=${18}
 
-WANDB_PROJECT=gpt3_experiments;
-
-if [[ $DOMAIN_ID == *"all"* ]]; then
+IDS_TO_DOMAINS=('1b' 'anonymized_openwebtext' 'anonymized_realnews' 'anonymized_reviews' 'cs' 'legal' 'med' 'reddit');
+     
+if [[ $DOMAIN_ID == "all" ]]; then
+     DOMAIN_ID=0,1,2,3,4,5,6,7;
+fi;
      # list of domains you'd like to train on, that can be found in $DATA_PATH
-     domains=1b,anonymized_openwebtext,anonymized_realnews,anonymized_reviews,cs,legal,med,reddit;
-     # validation datasets for each domain
-     valid_subset=valid_1b,valid_cs,valid_legal,valid_med,valid_anonymized_openwebtext,valid_anonymized_realnews,valid_reddit,valid_anonymized_reviews;
+# domains=1b,anonymized_openwebtext,anonymized_realnews,anonymized_reviews,cs,legal,med,reddit;
+# # validation datasets for each domain
+# valid_subset=valid_1b,valid_anonymized_openwebtext,valid_anonymized_realnews,valid_anonymized_reviews,valid_cs,valid_legal,valid_med,valid_reddit;
 
+DATA_PHRASE="";
+OIFS=$IFS;
+IFS=','
+read -a domain_ids <<< "$DOMAIN_ID";
+IFS=$OIFS;
+if [[ ${#domain_ids[@]} > 1 ]]; then
+     domains="";
+     valid_domains="";
+     for id in "${domain_ids[@]}"; do
+          domains="${domains},${IDS_TO_DOMAINS[$id]}"
+          valid_domains="${valid_domains},valid_${IDS_TO_DOMAINS[$id]}"
+     done;
+     
      DATA_PHRASE="$DATA_PATH \
           --task multidomain_language_modeling 
-          --valid-subset $valid_subset \
-          --train-domains $domains  \
-          --eval-domains $domains \
+          --valid-subset ${valid_domains#?} \
+          --train-domains ${domains#?}  \
+          --eval-domains ${domains#?} \
           --criterion desynchronized_cross_entropy     \
           "
-# name of wandb project to track model output (at wandb.ai)
 else
-     IDS_TO_DOMAINS=('1b' 'anonymized_openwebtext' 'anonymized_realnews' 'anonymized_reviews' 'cs' 'legal' 'med' 'reddit');
-     DATA_PHRASE="";
-     OIFS=$IFS;
-     IFS=','
-     read -a domain_ids <<< "$DOMAIN_IDS";
-     IFS=$OIFS;
-     for id in "${domain_ids[@]}"; do
-          DATA_PHRASE="${DATA_PHRASE}:$DATA_PATH/${IDS_TO_DOMAINS[$id]}"
-     done;
      DATA_PHRASE="${DATA_PHRASE#?} \
           --task language_modeling \
           --criterion cross_entropy     \
@@ -153,7 +165,7 @@ fi;
 if [[ $OLD_DIR != "None" ]]; then
      NEW_SUBFOLDER_PHRASE='';
      if [[ $RUN_ID != "" ]]; then
-          NEW_SUBFOLDER_PHRASE="--new-subfolder $ID ";
+          NEW_SUBFOLDER_PHRASE="--new-subfolder $RUN_ID ";
      fi;
      python $MOD_FOLDER/mod_utils/mod_checkpoint_utils.py \
           --old-folder $OLD_DIR \
@@ -162,6 +174,8 @@ if [[ $OLD_DIR != "None" ]]; then
           $NEW_SUBFOLDER_PHRASE \
           --phase-one-ratio $PHASE_ONE_RATIO \
           --domain-id $DOMAIN_ID;
+else 
+     SERIALIZATION_DIR=$SERIALIZATION_DIR/$SWEEP_NAME
 fi;
 
 if [[ $RESET_ITEMS != "None" ]]; then
@@ -172,8 +186,7 @@ fi;
 echo $RESET_PHRASE;
 
 if [[ $EXPERIMENT == *"demix"* ]]; then
-     python $MOD_FOLDER/fairseq_cli/train.py \
-          $DATA_PHRASE
+     python $MOD_FOLDER/fairseq_cli/train.py $DATA_PHRASE \
           --sample-break-mode none \
           --log-format simple  \
           --log-interval $LOG_INTERVAL    \
@@ -182,7 +195,6 @@ if [[ $EXPERIMENT == *"demix"* ]]; then
           --save-interval-updates $SAVE_INTERVAL_UPDATES     \
           --keep-interval-updates $KEEP_INTERVAL_UPDATES    \
           --arch $ARCH    \
-	     --criterion desynchronized_cross_entropy     \
           --lr-scheduler polynomial_decay     \
           --num-workers 2 \
           --max-sentences $BATCH_SIZE \
@@ -204,7 +216,7 @@ if [[ $EXPERIMENT == *"demix"* ]]; then
           --wandb-project $WANDB_PROJECT           \
           --wandb-entity $WANDB_ENTITY \
           --required-batch-size-multiple 1 \
-          --fp16 \
+          --memory-efficient-fp16 \
           --desynchronize --domain-parallel \
           $DISTRIBUTED_ARGS_PHRASE \
           --sync-type manual \
@@ -214,8 +226,7 @@ if [[ $EXPERIMENT == *"demix"* ]]; then
           $RESET_PHRASE \
           --pad-to-fixed-length;
 elif [[ $EXPERIMENT == *"unbalanced"* ]]; then
-     python $MOD_FOLDER/fairseq_cli/train.py     $DATA_PATH \
-          --task multidomain_language_modeling \
+     python $MOD_FOLDER/fairseq_cli/train.py $DATA_PHRASE \
           --sample-break-mode none \
           --log-format simple  \
           --log-interval $LOG_INTERVAL    \
@@ -244,9 +255,7 @@ elif [[ $EXPERIMENT == *"unbalanced"* ]]; then
           --save-dir $SERIALIZATION_DIR/$RUN_ID/     \
           --batch-size-valid 2                        \
           --wandb-project $WANDB_PROJECT           \
-          --valid-subset $valid_subset \
-          --train-domains $domains  \
-          --eval-domains $domains \
+          --wandb-entity $WANDB_ENTITY \
           --required-batch-size-multiple 1 \
           --memory-efficient-fp16 \
           $DISTRIBUTED_ARGS_PHRASE \
@@ -282,6 +291,7 @@ elif [[ $EXPERIMENT == *"dense"* ]]; then
           --save-dir $SERIALIZATION_DIR/$RUN_ID/     \
           --batch-size-valid 2                        \
           --wandb-project $WANDB_PROJECT           \
+          --wandb-entity $WANDB_ENTITY \
           --required-batch-size-multiple 1 \
           --fp16 \
           $DISTRIBUTED_ARGS_PHRASE \
@@ -315,6 +325,7 @@ elif [[ $EXPERIMENT == *"switch"* ]]; then
           --total-num-update $NUM_STEPS     \
           --warmup-updates $NUM_WARMUP_STEPS     \
           --wandb-project $WANDB_PROJECT \
+          --wandb-entity $WANDB_ENTITY \
           --save-dir $SERIALIZATION_DIR/$RUN_ID/         \
           --batch-size-valid 2                        \
           --train-domains $domains \
@@ -361,6 +372,7 @@ elif [[ $EXPERIMENT == *"gshard"* ]]; then
           --total-num-update $NUM_STEPS     \
           --warmup-updates $NUM_WARMUP_STEPS     \
           --wandb-project $WANDB_PROJECT \
+          --wandb-entity $WANDB_ENTITY \
           --save-dir $SERIALIZATION_DIR/$RUN_ID/         \
           --batch-size-valid 2                        \
           --train-domains $domains \
@@ -381,8 +393,7 @@ elif [[ $EXPERIMENT == *"gshard"* ]]; then
           --all-gather-list-size 32000;
 elif [[ $EXPERIMENT == *"domain_token"* ]]; then
      # domain token
-     python $MOD_FOLDER/fairseq_cli/train.py     $DATA_PATH \
-          --task multidomain_language_modeling \
+     python $MOD_FOLDER/fairseq_cli/train.py $DATA_PHRASE \
           --sample-break-mode none \
           --log-format simple  \
           --log-interval $LOG_INTERVAL    \
@@ -411,9 +422,7 @@ elif [[ $EXPERIMENT == *"domain_token"* ]]; then
           --save-dir $SERIALIZATION_DIR/$RUN_ID/     \
           --batch-size-valid 2                        \
           --wandb-project $WANDB_PROJECT           \
-          --valid-subset $valid_subset \
-          --train-domains $domains  \
-          --eval-domains $domains \
+          --wandb-entity $WANDB_ENTITY \
           --required-batch-size-multiple 1 \
           --memory-efficient-fp16 \
           $DISTRIBUTED_ARGS_PHRASE \
