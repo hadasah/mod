@@ -40,6 +40,9 @@ if [[ $MODEL_DIR == *"demix"* ]]; then
 elif [[ $MODEL_DIR == *"dense"* ]]; then
 	CHECKPOINT=$MODEL_DIR/checkpoint_1_${LOAD_FROM_STEP}.pt;
 	SERIALIZATION_DIR=${SERIALIZATION_DIR}_MOD_STEPS_${NUM_STEPS}_PHASE1_DENSE;
+elif [[ $MODEL_DIR == "None" ]]; then
+    CHECKPOINT="None"
+    SERIALIZATION_DIR=${SERIALIZATION_DIR}_MOD_STEPS_FROM_SCRATCH;
 fi
 
 TOKENS_PER_SAMPLE=1024;
@@ -140,5 +143,46 @@ elif [[ $CHECKPOINT == *"dense"* ]]; then
                 --pad-to-fixed-length \
                 --distributed-world-size $NUM_GPUS \
                 --distributed-port $PORT;
-		
+elif [[ $CHECKPOINT == "None" ]]; then
+        python $MOD_FOLDER/fairseq_cli/train.py     \
+                $DATA_PATH     \
+                --task multidomain_language_modeling     \
+                --sample-break-mode none     \
+                --log-format simple     \
+                --log-interval $LOG_INTERVAL    \
+                --skip-invalid-size-inputs-valid-test     \
+                --validate-interval-updates $VALIDATION_INTERVAL     \
+                --save-interval-updates $TOTAL_STEPS     \
+                --keep-interval-updates $TOTAL_STEPS    \
+                --no-epoch-checkpoints \
+                --arch $ARCH    \
+                --criterion cross_entropy    \
+                --lr-scheduler polynomial_decay     \
+                --lr $LR             \
+                --tokens-per-sample $TOKENS_PER_SAMPLE          \
+                --optimizer adam \
+                --adam-betas '(0.9, 0.95)'  \
+                --adam-eps 10e-8 \
+                --weight-decay 0.1 \
+                --num-workers 2 \
+                --max-sentences $BATCH_SIZE \
+                --max-sentences-valid $BATCH_SIZE \
+                --clip-norm $CLIP_NORM      \
+                --max-update $NUM_STEPS     \
+                --total-num-update $NUM_STEPS     \
+                --warmup-updates $NUM_WARMUP_STEPS     \
+                --wandb-project $WANDB_PROJECT \
+                --save-dir ${SERIALIZATION_DIR}        \
+                --train-subset $train_subset \
+                --valid-subset $valid_subset \
+                --train-domains $domains  \
+                --eval-domains $domains \
+                --required-batch-size-multiple 1 \
+                --update-freq $UPDATE_FREQ \
+                --fp16 \
+                --unbalanced \
+                --pad-to-fixed-length \
+                --distributed-world-size $NUM_GPUS \
+                --distributed-port $PORT;
+				
 fi

@@ -14,7 +14,7 @@ MODEL = 'transformer_lm_gpt3_small'
 SPECS = {
             "transformer_lm_gpt3_small": {
                 "NUM_GPUS": 16,
-                "NUM_STEPS": 80000,
+                "NUM_STEPS": 72000,
                 "SAVE_INTERVAL_UPDATES": 8000,
                 "LR": 5e-4,
                 "UF": 32
@@ -65,7 +65,7 @@ for sweep_name, grid in grids.items():
         #TODO change these
         account=RUN_CONSTANTS['SLURM_ACCOUNT'],
         partition=RUN_CONSTANTS['SLURM_PARTITION'],
-        jobtime='48:00:00',
+        jobtime='50:00:00',
         mem_gb=480,
         job_id_start=1,
         debug_mode=DEBUG_MODE,

@@ -17,14 +17,14 @@ RUN_CONSTANTS = CONSTANTS.get(username)
 MOD_FOLDER = RUN_CONSTANTS.get('MOD_FOLDER')
 # MODEL_FOLDER = RUN_CONSTANTS.get('MODEL_FOLDER') + "/small/"
 
-MODEL_FOLDER = "/checkpoint/suching/mod_publication/"
+MODEL_FOLDER = "/checkpoint/suching/mod_publication//mod//small/"
 
 
 DATA_BIN = RUN_CONSTANTS.get('DATA_BIN')
 JQ_PATH = RUN_CONSTANTS.get('JQ_PATH')
 
 # This regex looks in MODEL_FOLDER's subfolders for matches
-WANTED_FOLDER_REGEX = '.*dense.*80000.*'
+WANTED_FOLDER_REGEX = 'MOD_2_GPU_DOMAIN_1_MOD_STEPS_FROM_SCRATCH'
 # Used to distinguish between my naming conventions for demix vs modular models
 MODEL_TYPE = 'dense'
 # Determines where the posteriors and results gets saved 
@@ -47,7 +47,7 @@ grids = {
             "MODEL_FOLDERS": selected_folders,
             "CHECKPOINT_ID": [CHECKPOINT_ID],
             "SPLIT": ['test'],
-            "DOMAIN_ID": [i for i in range(1, 16)],
+            "DOMAIN_ID": [1],
             "MOD_FOLDER": [MOD_FOLDER],
         },
         'named_args': {},

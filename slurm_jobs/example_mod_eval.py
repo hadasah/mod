@@ -12,7 +12,7 @@ MODEL_FOLDER = RUN_CONSTANTS.get('MODEL_FOLDER')
 DATA_BIN = RUN_CONSTANTS.get('DATA_BIN')
 JQ_PATH = RUN_CONSTANTS.get('JQ_PATH')
 
-SWEEP_NAME = "eval_sweep_gpt3_small_mod_2GPU_PHASE1_16GPU"
+SWEEP_NAME = "eval_sweep_gpt3_small_mod_2GPU_FROM_SCRATCH"
 DEBUG_MODE = False
 DRY_MODE = False
 name_keys = []
