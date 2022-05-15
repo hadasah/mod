@@ -14,7 +14,7 @@ MODEL = 'transformer_lm_gpt3_small'
 SPECS = {
             "transformer_lm_gpt3_small": {
                 "NUM_GPUS": 16,
-                "NUM_STEPS": 72000,
+                "NUM_STEPS": 80000,
                 "SAVE_INTERVAL_UPDATES": 8000,
                 "LR": 5e-4,
                 "UF": 32
@@ -36,7 +36,7 @@ grids = {
             "NUM_GPUS": [SPECS['NUM_GPUS']],
             "DISTRIBUTED_PORT": [np.random.randint(1024, 65535)],
             "MODEL": [MODEL],
-            "EXPERIMENT": ['demix'],
+            "EXPERIMENT": ['dense'],
             "MODEL_DIR": [RUN_CONSTANTS.get('MODEL_FOLDER')],
             "DATA_BIN": [RUN_CONSTANTS.get('DATA_BIN')],
             "NUM_STEPS": [SPECS['NUM_STEPS']],

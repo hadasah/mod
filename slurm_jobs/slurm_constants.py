@@ -25,6 +25,6 @@ CONSTANTS = {
         "CONDA_ENV": 'mod',
         "NUM_CPUS": 10,
         "MEM_GB": 480,
-        "JOBTIME": '72:00:00',
+        "JOBTIME": '50:00:00',
     }
 }

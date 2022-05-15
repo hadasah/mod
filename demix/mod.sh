@@ -128,7 +128,6 @@ elif [[ $CHECKPOINT == *"dense"* ]]; then
                 --clip-norm $CLIP_NORM      \
                 --max-update $NUM_STEPS     \
                 --total-num-update $NUM_STEPS     \
-                --warmup-updates $NUM_WARMUP_STEPS     \
                 --wandb-project $WANDB_PROJECT \
                 --save-dir ${SERIALIZATION_DIR}        \
                 --train-subset $train_subset \

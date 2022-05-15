@@ -22,11 +22,11 @@ def add_args():
     parser.add_argument('--new-folder', type=str)
     parser.add_argument('--subfolder', type=str)
     parser.add_argument('--new-subfolder', type=str)
-    parser.add_argument('--phase-one-ratio', type=float)
+    parser.add_argument('--load-from-step', type=int)
     parser.add_argument('--domain-id', type=int)
     return parser.parse_args()
 
-def main(CHECKPOINTS_TOP_FOLDER, NEW_MODEL_TOP_FOLDER, subfolder, new_subfolder, phase_one_ratio, domain_id):
+def main(CHECKPOINTS_TOP_FOLDER, NEW_MODEL_TOP_FOLDER, subfolder, new_subfolder, load_from_step, domain_id):
     import shutil, torch
     # is_master_process = (not torch.distributed.is_initialized()) or (
     #     torch.distributed.is_initialized() and torch.distributed.get_rank() == 0
@@ -44,20 +44,21 @@ def main(CHECKPOINTS_TOP_FOLDER, NEW_MODEL_TOP_FOLDER, subfolder, new_subfolder,
     print('checkpoint_update_ids', checkpoint_update_ids)
     checkpoint_update_ids = [f for f in checkpoint_update_ids if f.count('_') == 2]
     print('checkpoint_update_ids', checkpoint_update_ids)
-    update_nums = [int(f.split("_")[2]) for f in checkpoint_update_ids]
-    print(update_nums)
-    max_update_num = max(update_nums)
-    print('max_update_num', max_update_num)
-    src_update_num = int(phase_one_ratio * max_update_num)
-    print('src_update_num', src_update_num)
-    sort_factor = 1
-    if phase_one_ratio > 0.5:
-        sort_factor = -1
-    zipped_name_and_num = [(a, b) for (a, b) in zip(update_nums, checkpoint_update_ids)]
-    zipped_name_and_num.sort(key=lambda i: sort_factor * i[0])
-    print('zipped_name_and_num', zipped_name_and_num)
-    src_checkpoint_update_id = zipped_name_and_num[min(range(len(zipped_name_and_num)), key=lambda i: abs(zipped_name_and_num[i][0]-src_update_num))][1]
-    print('src_checkpoint_update_id', src_checkpoint_update_id)
+    # update_nums = [int(f.split("_")[2]) for f in checkpoint_update_ids]
+    # print(update_nums)
+    # max_update_num = max(update_nums)
+    # print('max_update_num', max_update_num)
+    # src_update_num = phase_one_ratio
+    # print('src_update_num', src_update_num)
+    # sort_factor = 1
+    # if phase_one_ratio > 0.5:
+    #     sort_factor = -1
+    # zipped_name_and_num = [(a, b) for (a, b) in zip(update_nums, checkpoint_update_ids)]
+    # zipped_name_and_num.sort(key=lambda i: sort_factor * i[0])
+    # print('zipped_name_and_num', zipped_name_and_num)
+    # src_checkpoint_update_id = zipped_name_and_num[min(range(len(zipped_name_and_num)), key=lambda i: abs(zipped_name_and_num[i][0]-src_update_num))][1]
+    src_checkpoint_update_id = f"checkpoint_1_{load_from_step}"
+    # print('src_checkpoint_update_id', src_checkpoint_update_id)
     if 'checkpoint_last.pt' in files: #dense
         # for domain_id in range(8):
         new_domain_folder_path = os.path.join(NEW_MODEL_TOP_FOLDER, new_subfolder)
@@ -86,4 +87,4 @@ def main(CHECKPOINTS_TOP_FOLDER, NEW_MODEL_TOP_FOLDER, subfolder, new_subfolder,
 
 if __name__=='__main__':
     args = add_args()
-    main(args.old_folder, args.new_folder, args.subfolder, args.new_subfolder, args.phase_one_ratio, args.domain_id)
+    main(args.old_folder, args.new_folder, args.subfolder, args.new_subfolder, args.load_from_step, args.domain_id)

@@ -12,7 +12,7 @@ MODEL_FOLDER = RUN_CONSTANTS.get('MODEL_FOLDER')
 DATA_BIN = RUN_CONSTANTS.get('DATA_BIN')
 JQ_PATH = RUN_CONSTANTS.get('JQ_PATH')
 
-SWEEP_NAME = "eval_sweep_gpt3_small_mod_2GPU_FROM_SCRATCH"
+SWEEP_NAME = "eval_sweep_gpt3_small_mod_MOD_STEPS_FROM_SCRATCH"
 DEBUG_MODE = False
 DRY_MODE = False
 name_keys = []
@@ -25,7 +25,7 @@ WANTED_FOLDER_REGEX = '.*'
 # Used to distinguish between my naming conventions for demix vs modular models
 MODEL_TYPE = 'modular'
 # Determines where the posteriors and results gets saved 
-EVAL_FOLDER_ID = 'Base_dense_MOD_STEPS_PHASE_RATIO_0.1'
+EVAL_FOLDER_ID = 'Base_dense_MOD_STEPS_PHASE_RATIO_MOD_STEPS_FROM_SCRATCH'
 # Comma separated list of the checkpoint IDs. 
 #Unfortunately this can't be set per job, I'm assuming we're always setting the right # updates
 CHECKPOINT_IDS = 'best,best,best,best,best,best,best,best'
@@ -51,7 +51,7 @@ grids = {
             "GENERALIST_MODEL": ["None"],
             "TOP_K": [8],
             "EVAL_FOLDER_ID": [EVAL_FOLDER_ID],
-            "NUM_STEPS": [72000],
+            "NUM_STEPS": [40000],
             "EXCLUDE_EXPERT": ["False"],
             "ONLY_USE_DOMAIN_EXPERT": ['False'],
             "MOD_FOLDER": [MOD_FOLDER],

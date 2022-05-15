@@ -10,17 +10,17 @@ if username not in CONSTANTS:
     raise Error("username isn't defined in slurm_constants file")
 RUN_CONSTANTS = CONSTANTS.get(username)
 MOD_FOLDER = RUN_CONSTANTS.get('MOD_FOLDER')
-DEBUG_MODE = False
+DEBUG_MODE = True
 DRY_MODE = False
 name_keys = ["MODEL", "DOMAIN_ID", "NUM_GPUS", "UPDATE_FREQ", "BATCH_SIZE", "LOAD_FROM_STEP", "NUM_STEPS", "LR"]
 
 MODEL = 'transformer_lm_gpt3_small'
 SPECS = {"transformer_lm_gpt3_small": {
-                "MODEL_DIR": "/checkpoint/suching/mod_publication/NUMGPUS=16_EXPERIMENT=dense_NUMSTEPS=80000_UPDATEFREQ=32_LR=0.0005",
-                "SERIALIZATION_DIR": "/checkpoint/suching/mod_publication/mod/small/PHASE1_16GPU_MOD_2GPU",
+                "MODEL_DIR": "/checkpoint/suching/fp16/dense_small/",
+                "SERIALIZATION_DIR": "/checkpoint/suching/mod_publication/mod/small/PHASE1_16GPU_MOD_2GPU_MOD_STEPS_40000_TEST",
                 "NUM_GPUS": 2,
                 "TOTAL_STEPS": 80000,
-                "LOAD_FROM_STEP": [64000]
+                "LOAD_FROM_STEP": [40000]
             },
             "transformer_lm_gpt3_medium": 32,
             "transformer_lm_gpt3_large": 64,
@@ -40,7 +40,7 @@ grids = {
         'fixed_args': '',
         'positional_args': {
             "DATA_PATH": [RUN_CONSTANTS.get('DATA_BIN')],
-            "DOMAIN_ID": [2,6],
+            "DOMAIN_ID": [0],
             "MODEL_DIR": [SPECS['MODEL_DIR']],
             "ARCH": [MODEL],
             "LOAD_FROM_STEP": SPECS['LOAD_FROM_STEP'],
@@ -50,7 +50,7 @@ grids = {
             "TOTAL_STEPS": [SPECS['TOTAL_STEPS']],
             "WANDB_PROJECT": ['mod'],
             "UPDATE_FREQ": [32],
-            "LR": [5e-4],
+            "LR": [5e-5],
             "NUM_GPUS": [SPECS['NUM_GPUS']],
             "MOD_FOLDER": [MOD_FOLDER],
             "PORT": [12345]

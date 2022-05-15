@@ -12,13 +12,13 @@ MOD_FOLDER = RUN_CONSTANTS.get('MOD_FOLDER')
 SWEEP_NAME = "test_gpt3_small_to_mod_margsli"
 DEBUG_MODE = False
 DRY_MODE = False
-name_keys = ["MODEL",  "PHASE_ONE_RATIO", "RESET_ITEMS", "LR", "UPDATE_FREQ", "DOMAIN_ID"]
-NUM_GPUS = 1
+name_keys = ["MODEL",  "LOAD_FROM_STEP", "RESET_ITEMS", "LR", "UPDATE_FREQ", "DOMAIN_ID"]
+NUM_GPUS = 2
 NUM_NODES = 1
 # CHECKPOINTS_TOP_FOLDER = '/gscratch/zlab/margsli/demix-checkpoints/models/suchin/'
 # NEW_MODEL_TOP_FOLDER = '/gscratch/zlab/margsli/demix-checkpoints/models_test/suchin/'
-CHECKPOINTS_TOP_FOLDER = '/checkpoint/suching/margaret_sweep_rerun/small/'
-NEW_MODEL_TOP_FOLDER = '/checkpoint/suching/margsli_mod/_modular_gpt3_small_36K/modular_gpt3_small_36K_LR=0.001/'
+CHECKPOINTS_TOP_FOLDER = '/checkpoint/suching/fp16/'
+NEW_MODEL_TOP_FOLDER = '/checkpoint/suching/mod/_modular_gpt3_small_80K/modular_gpt3_small_80K_LR=0.0005/'
 
 re_string = ''
 FOLDERS = mod_checkpoint_utils.find_folders(CHECKPOINTS_TOP_FOLDER, re_string=re_string)
@@ -36,12 +36,12 @@ grids = {
             "COPYING_MODEL_FOLDER": [CHECKPOINTS_TOP_FOLDER],
             "NEW_MODEL_TOP_FOLDER": [NEW_MODEL_TOP_FOLDER],
             "CHECKPOINTS_SUBFOLDER": FOLDERS,
-            "PHASE_ONE_RATIO": [0.5],
+            "LOAD_FROM_STEP": [24000],
             "RESET_ITEMS": ['dataloader'],
-            "NUM_STEPS": [36000],
-            "UPDATE_FREQ": [4],
-            "LR": [1e-4],
-            "WANDB_PROJECT": ['test'],
+            "NUM_STEPS": [80000],
+            "UPDATE_FREQ": [32],
+            "LR": [5e-4],
+            "WANDB_PROJECT": ['mod_test'],
             "WANDB_ENTITY": ['scaling-demix'],
             "MOD_FOLDER": [MOD_FOLDER],
         },
