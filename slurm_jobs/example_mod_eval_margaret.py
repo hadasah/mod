@@ -28,7 +28,7 @@ WANTED_FOLDER_REGEX = '.*modular*'
 # Used to distinguish between my naming conventions for demix vs modular models
 MODEL_TYPE = 'modular'
 # Determines where the posteriors and results gets saved 
-EVAL_FOLDER_ID = 'Base_dense_LOAD_FROM_STEP_40000_LR_0.0005'
+EVAL_FOLDER_ID = 'Base_dense_LOAD_FROM_STEP_24000_LR_0.0005'
 # Comma separated list of the checkpoint IDs. 
 #Unfortunately this can't be set per job, I'm assuming we're always setting the right # updates
 CHECKPOINT_IDS = 'last,last,last,last,last,last,last,last'
@@ -53,7 +53,7 @@ grids = {
             "GENERALIST_MODEL": ["None"],
             "TOP_K": [8],
             "EVAL_FOLDER_ID": [EVAL_FOLDER_ID],
-            "LOAD_FROM_STEP": [40000],
+            "LOAD_FROM_STEP": [24000],
             "EXCLUDE_EXPERT": ["False"],
             "ONLY_USE_DOMAIN_EXPERT": ['False'],
             "MOD_FOLDER": [MOD_FOLDER],
