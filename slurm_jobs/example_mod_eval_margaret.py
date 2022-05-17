@@ -8,11 +8,11 @@ if username not in CONSTANTS:
     raise Error("username isn't defined in slurm_constants file")
 RUN_CONSTANTS = CONSTANTS.get(username)
 MOD_FOLDER = RUN_CONSTANTS.get('MOD_FOLDER')
-MODEL_FOLDER = "/checkpoint/suching/mod_sweep/"
+MODEL_FOLDER = "/checkpoint/suching/mod/"
 DATA_BIN = RUN_CONSTANTS.get('DATA_BIN')
 JQ_PATH = RUN_CONSTANTS.get('JQ_PATH')
 
-SWEEP_NAME = "eval_sweep_gpt3_small_mod_8GPU_PHASE1_64GPU_RESET"
+SWEEP_NAME = "eval_sweep_gpt3_small_mod_2GPU_PHASE1_16GPU_RESET"
 DEBUG_MODE = False
 DRY_MODE = False
 name_keys = []
@@ -24,18 +24,17 @@ NUM_GPUS = 8
 # MODEL=transformerlmgpt3small_DOMAINID=7_PHASEONERATIO=0.25_RESETITEMS=dataloader,meters_UPDATEFREQ=32_LR=0.001
 
 # This regex looks in MODEL_FOLDER's subfolders for matches
-WANTED_FOLDER_REGEX = '.*'
+WANTED_FOLDER_REGEX = '.*modular*'
 # Used to distinguish between my naming conventions for demix vs modular models
 MODEL_TYPE = 'modular'
 # Determines where the posteriors and results gets saved 
-EVAL_FOLDER_ID = 'Base_dense_PHASE_RATIO_0.25_LR_0.0005'
+EVAL_FOLDER_ID = 'Base_dense_LOAD_FROM_STEP_40000_LR_0.0005'
 # Comma separated list of the checkpoint IDs. 
 #Unfortunately this can't be set per job, I'm assuming we're always setting the right # updates
-CHECKPOINT_IDS = 'best,best,best,best,best,best,best,best'
+CHECKPOINT_IDS = 'last,last,last,last,last,last,last,last'
 EVAL_SCRIPT = f'{MOD_FOLDER}/demix/mix_eval_pipeline.sh' if MODEL_TYPE in ['demix', 'modular'] else f'{MOD_FOLDER}/demix/eval_pipeline.sh'
-all_runs = os.listdir(MODEL_FOLDER + "/_modular_gpt3_small_36K/")
+all_runs = os.listdir(MODEL_FOLDER + "/_modular_gpt3_small_80K/")
 regex = re.compile(WANTED_FOLDER_REGEX)
-print(all_runs)
 selected_folders = [folder for folder in all_runs if regex.match(folder)]
 print(selected_folders)
 grids = {
@@ -44,7 +43,7 @@ grids = {
         'positional_args': {
             "NUM_GPUS": [NUM_GPUS],
             "DATA_BIN": [DATA_BIN],
-            "ROOT_MODEL_FOLDER": [MODEL_FOLDER + "/_modular_gpt3_small_36K/"],
+            "ROOT_MODEL_FOLDER": ["/checkpoint/suching/mod//_modular_gpt3_small_80K//modular_gpt3_small_80K_LR=0.0005/"],
             "MODEL_FOLDERS": selected_folders,
             "CHECKPOINT_IDS": [CHECKPOINT_IDS],
             "DOMAIN_ID": [i for i in range(16)],
@@ -54,7 +53,7 @@ grids = {
             "GENERALIST_MODEL": ["None"],
             "TOP_K": [8],
             "EVAL_FOLDER_ID": [EVAL_FOLDER_ID],
-            "PHASE_RATIO": [0.25],
+            "LOAD_FROM_STEP": [40000],
             "EXCLUDE_EXPERT": ["False"],
             "ONLY_USE_DOMAIN_EXPERT": ['False'],
             "MOD_FOLDER": [MOD_FOLDER],

@@ -4,7 +4,7 @@ import re
 from slurm_jobs.slurm_constants import *
 
 
-SWEEP_NAME = "eval_sweep_gpt3_small_dense"
+SWEEP_NAME = "eval_sweep_gpt3_small_dense_fp16_averaged"
 DEBUG_MODE = False
 DRY_MODE = False
 name_keys = []
@@ -17,14 +17,17 @@ RUN_CONSTANTS = CONSTANTS.get(username)
 MOD_FOLDER = RUN_CONSTANTS.get('MOD_FOLDER')
 # MODEL_FOLDER = RUN_CONSTANTS.get('MODEL_FOLDER') + "/small/"
 
-MODEL_FOLDER = "/checkpoint/suching/mod/_modular_gpt3_small_80K/modular_gpt3_small_80K_LR=0.0005/"
+# MODEL_FOLDER = "/checkpoint/suching/mod/_modular_gpt3_small_80K/modular_gpt3_small_80K_LR=0.0005/"
+
+MODEL_FOLDER = "/checkpoint/suching/fp16//"
 
 
 DATA_BIN = RUN_CONSTANTS.get('DATA_BIN')
 JQ_PATH = RUN_CONSTANTS.get('JQ_PATH')
 
 # This regex looks in MODEL_FOLDER's subfolders for matches
-WANTED_FOLDER_REGEX = 'MODEL=transformerlmgpt3small_DOMAINID=0_PHASEONERATIO=0.6_RESETITEMS=dataloader_UPDATEFREQ=32_LR=0.0005'
+# WANTED_FOLDER_REGEX = 'MODEL=transformerlmgpt3small_DOMAINID=0_PHASEONERATIO=0.6_RESETITEMS=dataloader_UPDATEFREQ=32_LR=0.0005'
+WANTED_FOLDER_REGEX='merged_mod'
 # Used to distinguish between my naming conventions for demix vs modular models
 MODEL_TYPE = 'dense'
 # Determines where the posteriors and results gets saved 
@@ -47,7 +50,7 @@ grids = {
             "MODEL_FOLDERS": selected_folders,
             "CHECKPOINT_ID": [CHECKPOINT_ID],
             "SPLIT": ['test'],
-            "DOMAIN_ID": [0],
+            "DOMAIN_ID": [i for i in range(16)],
             "MOD_FOLDER": [MOD_FOLDER],
         },
         'named_args': {},

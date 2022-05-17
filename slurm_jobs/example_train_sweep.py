@@ -10,16 +10,23 @@ if RUN_CONSTANTS is None:
     raise Error("username isn't defined in slurm_constants file")
 MOD_FOLDER = RUN_CONSTANTS.get('MOD_FOLDER')
 
-MODEL = 'transformer_lm_gpt3_small'
+MODEL = 'transformer_lm_gpt3_medium'
+
 SPECS = {
             "transformer_lm_gpt3_small": {
                 "NUM_GPUS": 16,
-                "NUM_STEPS": 80000,
-                "SAVE_INTERVAL_UPDATES": 8000,
+                "NUM_STEPS": 72000,
+                "SAVE_INTERVAL_UPDATES": 6000,
                 "LR": 5e-4,
                 "UF": 32
             },
-            "transformer_lm_gpt3_medium": 32,
+            "transformer_lm_gpt3_medium": {
+                "NUM_GPUS": 32,
+                "NUM_STEPS": 32000,
+                "SAVE_INTERVAL_UPDATES": 2000,
+                "LR": 5e-4,
+                "UF": 32
+            },
             "transformer_lm_gpt3_large": 64,
             "transformer_lm_gpt3_xl": 128
             }[MODEL]
