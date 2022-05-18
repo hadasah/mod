@@ -33,7 +33,7 @@ EVAL_FOLDER_ID = 'Base_dense_LOAD_FROM_STEP_24000_LR_0.0005'
 #Unfortunately this can't be set per job, I'm assuming we're always setting the right # updates
 CHECKPOINT_IDS = 'last,last,last,last,last,last,last,last'
 EVAL_SCRIPT = f'{MOD_FOLDER}/demix/mix_eval_pipeline.sh' if MODEL_TYPE in ['demix', 'modular'] else f'{MOD_FOLDER}/demix/eval_pipeline.sh'
-all_runs = os.listdir(MODEL_FOLDER + "/_modular_gpt3_small_80K/")
+all_runs = os.listdir("/checkpoint/suching/mod/_modular_gpt3_small_80K/")
 regex = re.compile(WANTED_FOLDER_REGEX)
 selected_folders = [folder for folder in all_runs if regex.match(folder)]
 print(selected_folders)

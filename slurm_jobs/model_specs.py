@@ -12,7 +12,7 @@ SPECS = {
                 "NUM_GPUS": 32,
                 "NUM_MOD_GPUS": 4,
                 "NUM_STEPS": 32000,
-                "MOD_FROM_STEPS": [9600, 16000, 24000],
+                "MOD_FROM_STEPS": [8000, 14000],
                 "SAVE_INTERVAL_UPDATES": 2000,
                 "LR": 5e-4,
                 "UF": 32
