@@ -1,11 +1,11 @@
 from slurm_jobs.slurm_job import run_grid
+import argparse
 from slurm_jobs.slurm_constants import CONSTANTS
-from slurm_jobs.model_specs import SPECS
 import os
 import numpy as np
 
 
-def main(model, debug=False, dry_mode=False):
+def main(model, experiment, debug=False, dry_mode=False):
     DEBUG_MODE = debug
     DRY_MODE = dry_mode
     MODEL = model
@@ -15,6 +15,7 @@ def main(model, debug=False, dry_mode=False):
     if RUN_CONSTANTS is None:
         raise Error("username isn't defined in slurm_constants file")
     MOD_FOLDER = RUN_CONSTANTS.get('MOD_FOLDER')
+    from slurm_jobs.model_specs import SPECS
     SPECS = SPECS[MODEL]
     NUM_NODES = SPECS['NUM_GPUS'] // 8
     SWEEP_NAME = f"sweep_{MODEL}_{SPECS['NUM_GPUS']}_GPUs"
@@ -28,7 +29,7 @@ def main(model, debug=False, dry_mode=False):
                 "NUM_GPUS": [SPECS['NUM_GPUS']],
                 "DISTRIBUTED_PORT": [np.random.randint(1024, 65535)],
                 "MODEL": [MODEL],
-                "EXPERIMENT": ['demix'],
+                "EXPERIMENT": [experiment],
                 "MODEL_DIR": [RUN_CONSTANTS.get('MODEL_FOLDER')],
                 "DATA_BIN": [RUN_CONSTANTS.get('DATA_BIN')],
                 "NUM_STEPS": [SPECS['NUM_STEPS']],
@@ -71,5 +72,6 @@ if __name__ == '__main__':
     parser.add_argument('--debug', action='store_true')
     parser.add_argument('--dry-mode', action='store_true')
     parser.add_argument('--model', type=str)
+    parser.add_argument('--experiment', type=str)
     args = parser.parse_args()
-    main(args.model, args.debug, args.dry_mode)
+    main(args.model, args.experiment, args.debug, args.dry_mode)

@@ -2,9 +2,8 @@ from slurm_jobs.slurm_job import run_grid
 import os
 import re
 from slurm_jobs.slurm_constants import *
+from slurm_jobs.model_specs import EVAL_FOLDERS
 
-
-SWEEP_NAME = "eval_sweep_gpt3_small_dense_fp16_averaged"
 DEBUG_MODE = False
 DRY_MODE = False
 name_keys = []
@@ -19,7 +18,11 @@ MOD_FOLDER = RUN_CONSTANTS.get('MOD_FOLDER')
 
 # MODEL_FOLDER = "/checkpoint/suching/mod/_modular_gpt3_small_80K/modular_gpt3_small_80K_LR=0.0005/"
 
-MODEL_FOLDER = "/checkpoint/suching/fp16//"
+
+MODEL='transformer_lm_gpt3_medium'
+SWEEP_NAME = f"eval_sweep_{MODEL}_dense"
+EVAL_FOLDER = EVAL_FOLDERS[MODEL]
+MODEL_FOLDER = EVAL_FOLDER['dense']
 
 
 DATA_BIN = RUN_CONSTANTS.get('DATA_BIN')
@@ -47,10 +50,10 @@ grids = {
         'positional_args': {
             "DATA_BIN": [DATA_BIN],
             "ROOT_MODEL_FOLDER": [MODEL_FOLDER],
-            "MODEL_FOLDERS": selected_folders,
+            "MODEL_FOLDERS": '.',
             "CHECKPOINT_ID": [CHECKPOINT_ID],
             "SPLIT": ['test'],
-            "DOMAIN_ID": [i for i in range(16)],
+            "DOMAIN_ID": [6, 14],
             "MOD_FOLDER": [MOD_FOLDER],
         },
         'named_args': {},

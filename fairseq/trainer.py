@@ -357,6 +357,7 @@ class Trainer(object):
                 # disable on TPUs until they support broadcast
                 and not self.tpu
                 and self.cfg.model.moe_freq == 0
+                and not getattr(self.cfg.model, "desynchronize", False)
             ):
                 state = distributed_utils.broadcast_object(
                     state,
