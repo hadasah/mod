@@ -8,7 +8,9 @@ ROOT_MODEL_FOLDER=$3
 SUBFOLDERS=$4
 
 CHECKPOINT_IDS=$5
-
+# echo $ROOT_MODEL_FOLDER;
+# echo $SUBFOLDERS;
+# echo $CHECKPOINT_IDS;
 # target domain to evaluate on
 target_domain_ID=$6
 # Ensemble type, one of "simple_average","cached_prior", "updating_prior", "uniform_prior"
@@ -73,17 +75,21 @@ results_folder=${ROOT_MODEL_FOLDER}/${evals_folder}/${target_domain}/
 
 cd $MOD_FOLDER;
 
-# OIFS=$IFS;
-# IFS=' ';
-# read -r results_folder models < <(python -u mod_utils/mix_eval_utils.py \
-# --regex_name_str ${REGEX_NAME_STR} \
-# --model_folder ${ROOT_MODEL_FOLDER} \
-# --exclude-expert ${exclude_expert} \
-# --only-use-expert ${only_use_expert} \
-# --generalist-model ${generalist_model} \
-# --model-type ${model_type} \
-# --checkpoint-ids ${CHECKPOINT_IDS};
-# IFS=$OIFS;
+REGEX_NAME_STR=$SUBFOLDERS;
+OIFS=$IFS;
+IFS=' ';
+read -r results_folder model < <(python -u mod_utils/mix_eval_utils.py \
+--regex-name-str ${REGEX_NAME_STR} \
+--model-folder ${ROOT_MODEL_FOLDER} \
+--exclude-expert ${exclude_expert} \
+--only-use-expert ${only_use_expert} \
+--generalist-model ${generalist_model} \
+--model-type ${model_type} \
+--checkpoint-ids ${CHECKPOINT_IDS} \
+--target-domain-id ${target_domain_ID});
+IFS=$OIFS;
+echo $results_folder;
+echo $model;
 mkdir -p ${results_folder}
 prior_results_path=${results_folder}/dev_posteriors.jsonl;
 results_path=${results_folder}/test_results.txt;

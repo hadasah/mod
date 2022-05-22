@@ -8,11 +8,12 @@ if RUN_CONSTANTS is None:
     raise Error("username isn't defined in slurm_constants file")
 MOD_FOLDER = RUN_CONSTANTS.get('MOD_FOLDER')
 
-SWEEP_NAME = "sweep_gpt3_small"
+SWEEP_NAME = "sweep_gpt3_small_test"
 DEBUG_MODE = True
 DRY_MODE = False
 name_keys = []
 NUM_GPUS = 8
+NUM_NODES = 1
 
 grids = {
     SWEEP_NAME: {
@@ -21,9 +22,10 @@ grids = {
             "SWEEP_NAME": [SWEEP_NAME],
             "NUM_GPUS": [NUM_GPUS],
             "MODEL": ['transformer_lm_gpt3_small'],
-            "EXPERIMENT": ['dense', 'demix'],
+            # "EXPERIMENT": ['dense', 'demix'],
+            "EXPERIMENT": ['demix'],
             "DATA_PATH": [RUN_CONSTANTS.get('DATA_BIN')],
-            "DOMAIN_ID": ["all"],
+            "DOMAIN_IDS": ["0,1,2,3"],
             "PARAMS_TO_FREEZE": ["None"],
             "COPYING_MODEL_FOLDER": ["None"],
             "MODEL_FOLDER": [RUN_CONSTANTS.get('MODEL_FOLDER')],
@@ -33,8 +35,9 @@ grids = {
             "RESET_ITEMS": ["None"],
             "NUM_STEPS": [18000, 36000],
             "UPDATE_FREQ": [32],
-            "LR": [1e-4, 2e-4, 5e-4, 1e-3, 2e-3],
-            "WANDB_PROJECT": [''],
+            # "LR": [1e-4, 2e-4, 5e-4, 1e-3, 2e-3],
+            "LR": [1e-5],
+            "WANDB_PROJECT": ['test'],
             "WANDB_ENTITY": ['scaling-demix'],
             "MOD_FOLDER": [MOD_FOLDER],
         },

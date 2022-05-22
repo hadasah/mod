@@ -12,21 +12,24 @@ MODEL_FOLDER = RUN_CONSTANTS.get('MODEL_FOLDER')
 DATA_BIN = RUN_CONSTANTS.get('DATA_BIN')
 JQ_PATH = RUN_CONSTANTS.get('JQ_PATH')
 
-SUBFOLDER_NAME = "diff_pretrain_gpt3_small_to_mod"
+SUBFOLDER_NAME = "diff_pretrain_gpt3_small_to_mod2/MODEL=transformerlmgpt3small_EXPERIMENT=dense_NUMSTEPS=300000_UPDATEFREQ=8_LR=0.0005_DOMAINIDS=6"
 DEBUG_MODE = False
 DRY_MODE = False
 name_keys = []
 NUM_GPUS = 8
 
 # # This regex looks in MODEL_FOLDER/SUBFOLDER for folder matches
-WANTED_FOLDER_REGEXES = ['.*DOMAINIDS=0.*']
+WANTED_FOLDER_REGEXES = ['MODEL']
 MODEL_TYPE = 'modular'
 CHECKPOINT_IDS = ['2_66000','1_66000','1_66000','1_66000','1_66000','1_66000','1_66000','1_66000']
 
 EVAL_SCRIPT = f'{MOD_FOLDER}/demix/mix_eval_pipeline.sh' if MODEL_TYPE in ['demix', 'modular'] else f'{MOD_FOLDER}/demix/eval_pipeline.sh'
 MODEL_FOLDER = f'{MODEL_FOLDER}/{SUBFOLDER_NAME}'
 SWEEP_NAME = f'{MODEL_FOLDER}/evals'
-CHECKPOINT_IDS = ':'.join(CHECKPOINT_IDS)
+CHECKPOINT_IDS = ','.join(CHECKPOINT_IDS)
+EVAL_FOLDER_ID = WANTED_FOLDER_REGEXES[0].replace('.', '')
+if EVAL_FOLDER_ID == '':
+    EVAL_FOLDER_ID = 'all'
 
 grids = {
     SWEEP_NAME: {
@@ -35,7 +38,7 @@ grids = {
             "NUM_GPUS": [NUM_GPUS],
             "DATA_BIN": [DATA_BIN],
             "ROOT_MODEL_FOLDER": [MODEL_FOLDER],
-            "MODEL_FOLDERS": [WANTED_FOLDER_REGEXES],
+            "MODEL_FOLDERS": WANTED_FOLDER_REGEXES,
             "CHECKPOINT_IDS": [CHECKPOINT_IDS],
             "DOMAIN_ID": [i for i in range(16)],
             "ENSEMBLE_TYPE": ['cached_prior'],

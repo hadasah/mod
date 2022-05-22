@@ -76,7 +76,8 @@ if [[ ${#domain_ids[@]} > 1 ]]; then
           --criterion desynchronized_cross_entropy     \
           "
 else
-     DATA_PHRASE="${DATA_PHRASE#?} \
+     id=${domain_ids[0]}
+     DATA_PHRASE="${DATA_PATH}/${IDS_TO_DOMAINS[$id]} \
           --task language_modeling \
           --criterion cross_entropy     \
           ";
@@ -122,7 +123,8 @@ if [[ $NUM_GPUS == "8" ]]; then
      if [[ $EXPERIMENT == *"dense"*  || $EXPERIMENT == *"domain_token"* ]]; then
           DATA_PARALLEL_GROUPS="0,1,2,3,4,5,6,7";
      elif  [[ $EXPERIMENT == *"demix"* ]]; then
-          DATA_PARALLEL_GROUPS="0 1 2 3 4 5 6 7";
+          # DATA_PARALLEL_GROUPS="0 1 2 3 4 5 6 7";
+          DATA_PARALLEL_GROUPS="0,1 2,3 4,5 6,7";
      fi;
 elif [[ $NUM_GPUS == "16" ]]; then
      if [[ $EXPERIMENT == *"dense"*  || $EXPERIMENT == *"domain_token"* ]]; then

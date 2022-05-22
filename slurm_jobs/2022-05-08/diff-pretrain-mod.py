@@ -10,20 +10,17 @@ if username not in CONSTANTS:
 RUN_CONSTANTS = CONSTANTS.get(username)
 MOD_FOLDER = RUN_CONSTANTS.get('MOD_FOLDER')
 SWEEP_NAME = "diff_pretrain_gpt3_small_to_mod2"
-DEBUG_MODE = False
+DEBUG_MODE = True
 DRY_MODE = False
 name_keys = ["MODEL", "CHECKPOINTS_SUBFOLDER", "PHASE_ONE_UPDATE_NUM", "RESET_ITEMS", "LR", "UPDATE_FREQ", "DOMAIN_ID"]
 NUM_GPUS = 1
 NUM_NODES = 1
-CHECKPOINTS_TOP_FOLDER = '/gscratch/zlab/margsli/demix-checkpoints/models/diff_pretrain_gpt3_small/MODEL=transformerlmgpt3small_EXPERIMENT=dense_NUMSTEPS=300000_UPDATEFREQ=8_LR=0.0005_DOMAINIDS=0/'
-NEW_MODEL_TOP_FOLDER = '/gscratch/zlab/margsli/demix-checkpoints/models/diff_pretrain_gpt3_small_to_mod2/MODEL=transformerlmgpt3small_EXPERIMENT=dense_NUMSTEPS=300000_UPDATEFREQ=8_LR=0.0005_DOMAINIDS=0/'
-# CHECKPOINTS_TOP_FOLDER = '/checkpoint/suching/margaret_sweep_rerun/small/'
-# NEW_MODEL_TOP_FOLDER = '/checkpoint/suching/mod_sweep/_modular_gpt3_small_36K/modular_gpt3_small_36K_LR=0.001/'
+CHECKPOINTS_TOP_FOLDER = '/gscratch/zlab/margsli/demix-checkpoints/models/diff_pretrain_gpt3_small/MODEL=transformerlmgpt3small_EXPERIMENT=dense_DOMAINIDS=5_NUMSTEPS=300000_UPDATEFREQ=8_LR=0.0005/'
+NEW_MODEL_TOP_FOLDER = '/gscratch/zlab/margsli/demix-checkpoints/models/diff_pretrain_gpt3_small_to_mod2/MODEL=transformerlmgpt3small_EXPERIMENT=dense_NUMSTEPS=300000_UPDATEFREQ=8_LR=0.0005_DOMAINIDS=5/'
 
 re_string = ''
 FOLDERS = mod_checkpoint_utils.find_folders(CHECKPOINTS_TOP_FOLDER, re_string=re_string)
 print(FOLDERS)
-
 
 grids = {
     SWEEP_NAME: {
@@ -37,6 +34,7 @@ grids = {
             "DOMAIN_ID": [i for i in range(8)],
             "PARAMS_TO_FREEZE": ["None"],
             "COPYING_MODEL_FOLDER": [CHECKPOINTS_TOP_FOLDER],
+            # "COPYING_MODEL_FOLDER": ["None"],
             "NEW_MODEL_TOP_FOLDER": [NEW_MODEL_TOP_FOLDER],
             "CHECKPOINTS_SUBFOLDER": FOLDERS,
             "PHASE_ONE_RATIO": ["None"],
@@ -64,10 +62,10 @@ for sweep_name, grid in grids.items():
         cpus=RUN_CONSTANTS.get('NUM_CPUS'),
         nodes=NUM_NODES,
         account='zlab',
-        # partition=RUN_CONSTANTS.get('SLURM_PARTITION'),
-        partition='ckpt',
-        # jobtime=RUN_CONSTANTS.get('JOBTIME'),
-        jobtime='11:00:00',
+        partition=RUN_CONSTANTS.get('SLURM_PARTITION'),
+        # partition='ckpt',
+        jobtime=RUN_CONSTANTS.get('JOBTIME'),
+        # jobtime=':00:00',
         mem_gb=RUN_CONSTANTS.get('MEM_GB'),
         job_id_start=1,
         debug_mode=DEBUG_MODE,

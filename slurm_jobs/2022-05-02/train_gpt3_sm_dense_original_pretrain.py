@@ -18,15 +18,18 @@ grids = {
     SWEEP_NAME: {
         'fixed_args': '',
         'positional_args': {
+            "SWEEP_NAME": [SWEEP_NAME],
             "NUM_GPUS": [NUM_GPUS],
             "MODEL": ['transformer_lm_gpt3_small'],
             "EXPERIMENT": ['dense', ],
             "DATA_BIN": [RUN_CONSTANTS.get('DATA_BIN')],
+            "DOMAIN_IDS": [3, 7],
             "PARAMS_TO_FREEZE": ["None"],
             "COPYING_MODEL_FOLDER": ["None"],
             "MODEL_FOLDER": [RUN_CONSTANTS.get('MODEL_FOLDER')],
             "SUBFOLDER_NAME": [SWEEP_NAME],
             "PHASE_ONE_RATIO": ["None"],
+            "PHASE_ONE_UPDATE_NUM": ["None"],
             "RESET_ITEMS": ["None"],
             "NUM_STEPS": [300000],
             "UPDATE_FREQ": [8],
@@ -34,7 +37,6 @@ grids = {
             "WANDB_PROJECT": ['test'],
             "WANDB_ENTITY": ['scaling-demix'],
             "MOD_FOLDER": [MOD_FOLDER],
-            "DOMAIN_IDS": ['0', '1', '2']
         },
         'named_args': {},
     },
