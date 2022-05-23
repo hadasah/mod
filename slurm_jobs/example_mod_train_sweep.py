@@ -37,11 +37,11 @@ def main(model, debug=False, dry_mode=False, from_scratch=False, domains=None, l
         SPECS['MOD_FROM_STEPS'] = [0]
     else:
         # modify to path to dense checkpoint you want to use
-        #PATH_TO_DENSE_CHECKPOINTS = '/checkpoint/suching/fp16/'
-        #PATH_TO_DENSE_CHECKPOINTS = '/checkpoint/suching/mod_baselines/MODEL=transformerlmgpt3small_NUMGPUS=16_EXPERIMENT=dense_NUMSTEPS=80000_UPDATEFREQ=32_LR=0.0005/'
-        PATH_TO_DENSE_CHECKPOINTS = '/checkpoint/suching/mod_publication/NUMGPUS=32_EXPERIMENT=dense_NUMSTEPS=32000_UPDATEFREQ=32_LR=0.0005/'
+        if MODEL == 'transformer_lm_gpt3_small':
+            PATH_TO_DENSE_CHECKPOINTS = '/checkpoint/suching/mod_baselines/MODEL=transformerlmgpt3small_NUMGPUS=16_EXPERIMENT=dense_NUMSTEPS=80000_UPDATEFREQ=32_LR=0.0005/'
+        elif MODEL == 'transformer_lm_gpt3_medium':
+            PATH_TO_DENSE_CHECKPOINTS = '/checkpoint/suching/mod_publication/NUMGPUS=32_EXPERIMENT=dense_NUMSTEPS=32000_UPDATEFREQ=32_LR=0.0005/'
         NEW_MODEL_TOP_FOLDER = f'/checkpoint/suching/mod/_modular_{MODEL}/modular_{MODEL}_LR={SPECS["LR"]}/'
-
         re_string = ''
         FOLDERS = mod_checkpoint_utils.find_folders(PATH_TO_DENSE_CHECKPOINTS, re_string=re_string)
         print(FOLDERS)
