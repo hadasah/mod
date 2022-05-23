@@ -34,6 +34,7 @@ def main(model, experiment, debug=False, dry_mode=False):
                 "DATA_BIN": [RUN_CONSTANTS.get('DATA_BIN')],
                 "NUM_STEPS": [SPECS['NUM_STEPS']],
                 "SAVE_INTERVAL_UPDATES": [SPECS['SAVE_INTERVAL_UPDATES']],
+                "STOP_TIME_HOURS": [SPECS['TRAIN_HOURS']],
                 "UPDATE_FREQ": [SPECS["UF"]],
                 "LR": [SPECS["LR"]],
                 "WANDB_PROJECT": ['publication-test'],
@@ -58,7 +59,7 @@ def main(model, experiment, debug=False, dry_mode=False):
             #TODO change these
             account=RUN_CONSTANTS['SLURM_ACCOUNT'],
             partition=RUN_CONSTANTS['SLURM_PARTITION'],
-            jobtime='50:00:00',
+            jobtime='80:00:00',
             mem_gb=480,
             job_id_start=1,
             debug_mode=DEBUG_MODE,

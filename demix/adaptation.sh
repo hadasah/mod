@@ -25,22 +25,26 @@ RESET_ITEMS=${10}
 NUM_STEPS=${11};
 STOP_TIME_HOURS=${12};
 UPDATE_FREQ=${13};
-LR=${14};
+AVERAGE=${14};
+LR=${15};
+PORT=${16};
 # name of wandb project to track model output (at wandb.ai)
-WANDB_PROJECT=${15};
+WANDB_PROJECT=${17};
 # name of wandb entity 
-WANDB_ENTITY=${16};
+WANDB_ENTITY=${18};
 
-MOD_FOLDER=${17};
+MOD_FOLDER=${19};
 
-RUN_ID=${18}
+RUN_ID=${20};
 
-IDS_TO_DOMAINS=('1b' 'anonymized_openwebtext' 'anonymized_realnews' 'anonymized_reviews' 'cs' 'legal' 'med' 'reddit');
-DOMAIN=${IDS_TO_DOMAINS[$DOMAIN_ID]};
+
+#IDS_TO_DOMAINS=('1b' 'anonymized_openwebtext' 'anonymized_realnews' 'anonymized_reviews' 'cs' 'legal' 'med' 'reddit' 'anonymized_latest_news_redo' 'anonymized_tweets_redo' 'anonymized_yelp_reviews_redo' 'cord19-redo' 'github_redo' 'gutenberg' 'legal_contracts' 'qasper');
+#DOMAIN=${IDS_TO_DOMAINS[$DOMAIN_ID]};
+DOMAIN=$DOMAIN_ID;
 DATA_PATH=$TOP_DATA_PATH;
 
 domains=${DOMAIN};
-train_subset=train;
+train_subset=train_${DOMAIN};
 valid_subset=valid_${DOMAIN};
 
 
@@ -86,21 +90,24 @@ read -a reset_vals <<< "$RESET_ITEMS";
 IFS=$OIFS;
 
 if [ $NUM_GPUS \> 1 ]; then
-     DISTRIBUTED_ARGS_PHRASE="--ddp-backend no_c10d --distributed-world-size $NUM_GPUS --distributed-port 12345";
+     DISTRIBUTED_ARGS_PHRASE="--ddp-backend no_c10d --distributed-world-size $NUM_GPUS --distributed-port $PORT";
 fi;
-
 if [[ $OLD_DIR != "None" ]]; then
      NEW_SUBFOLDER_PHRASE='';
      if [[ $RUN_ID != "" ]]; then
           NEW_SUBFOLDER_PHRASE="--new-subfolder $RUN_ID ";
      fi;
+     if [[ $AVERAGE == "True" ]]; then
+        python $MOD_FOLDER/mod_utils/average.py --output-dir $SERIALIZATION_DIR/$RUN_ID;
+    else
      python $MOD_FOLDER/mod_utils/mod_checkpoint_utils.py \
           --old-folder $OLD_DIR \
           --new-folder $SERIALIZATION_DIR \
           --subfolder $SUBFOLDER_NAME \
           $NEW_SUBFOLDER_PHRASE \
-          --load-from-step $LOAD_FROM_STEP \
+          --load-from-step -1 \
           --domain-id $DOMAIN_ID;
+    fi;
 fi;
 
 if [[ $RESET_ITEMS != "None" ]]; then

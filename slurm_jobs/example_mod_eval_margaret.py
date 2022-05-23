@@ -12,7 +12,7 @@ MODEL_FOLDER = "/checkpoint/suching/mod/"
 DATA_BIN = RUN_CONSTANTS.get('DATA_BIN')
 JQ_PATH = RUN_CONSTANTS.get('JQ_PATH')
 
-SWEEP_NAME = "eval_sweep_gpt3_small_mod_2GPU_PHASE1_16GPU_RESET"
+SWEEP_NAME = "eval_sweep_transformer_lm_gpt3_medium_mod_LOAD_FROM_STEP_0"
 DEBUG_MODE = False
 DRY_MODE = False
 name_keys = []
@@ -24,16 +24,16 @@ NUM_GPUS = 8
 # MODEL=transformerlmgpt3small_DOMAINID=7_PHASEONERATIO=0.25_RESETITEMS=dataloader,meters_UPDATEFREQ=32_LR=0.001
 
 # This regex looks in MODEL_FOLDER's subfolders for matches
-WANTED_FOLDER_REGEX = '.*modular*'
+WANTED_FOLDER_REGEX = '.*'
 # Used to distinguish between my naming conventions for demix vs modular models
 MODEL_TYPE = 'modular'
 # Determines where the posteriors and results gets saved 
-EVAL_FOLDER_ID = 'Base_dense_LOAD_FROM_STEP_24000_LR_0.0005'
+EVAL_FOLDER_ID = 'Base_dense_LOAD_FROM_STEP_0_LR_0.0005'
 # Comma separated list of the checkpoint IDs. 
 #Unfortunately this can't be set per job, I'm assuming we're always setting the right # updates
-CHECKPOINT_IDS = 'last,last,last,last,last,last,last,last'
+CHECKPOINT_IDS = 'best,best,best,best,best,best,best,best'
 EVAL_SCRIPT = f'{MOD_FOLDER}/demix/mix_eval_pipeline.sh' if MODEL_TYPE in ['demix', 'modular'] else f'{MOD_FOLDER}/demix/eval_pipeline.sh'
-all_runs = os.listdir("/checkpoint/suching/mod/_modular_gpt3_small_80K/")
+all_runs = os.listdir("/checkpoint/suching/mod/_modular_transformer_lm_gpt3_medium/modular_transformer_lm_gpt3_medium_LR=0.0005/")
 regex = re.compile(WANTED_FOLDER_REGEX)
 selected_folders = [folder for folder in all_runs if regex.match(folder)]
 print(selected_folders)
@@ -43,8 +43,8 @@ grids = {
         'positional_args': {
             "NUM_GPUS": [NUM_GPUS],
             "DATA_BIN": [DATA_BIN],
-            "ROOT_MODEL_FOLDER": ["/checkpoint/suching/mod//_modular_gpt3_small_80K//modular_gpt3_small_80K_LR=0.0005/"],
-            "MODEL_FOLDERS": selected_folders,
+            "ROOT_MODEL_FOLDER": ["/checkpoint/suching/mod/_modular_transformer_lm_gpt3_medium/modular_transformer_lm_gpt3_medium_LR=0.0005/"],
+            "MODEL_FOLDER": ['.'],
             "CHECKPOINT_IDS": [CHECKPOINT_IDS],
             "DOMAIN_ID": [i for i in range(16)],
             "ENSEMBLE_TYPE": ['cached_prior'],
@@ -53,7 +53,7 @@ grids = {
             "GENERALIST_MODEL": ["None"],
             "TOP_K": [8],
             "EVAL_FOLDER_ID": [EVAL_FOLDER_ID],
-            "LOAD_FROM_STEP": [24000],
+            "LOAD_FROM_STEP": [0],
             "EXCLUDE_EXPERT": ["False"],
             "ONLY_USE_DOMAIN_EXPERT": ['False'],
             "MOD_FOLDER": [MOD_FOLDER],

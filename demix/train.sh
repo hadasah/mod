@@ -17,18 +17,21 @@ NUM_STEPS=${7}
 
 # save interval
 SAVE_INTERVAL_UPDATES=${8}
+# stop time hours
+STOP_TIME_HOURS=${9}
+
 # update frequency
-UPDATE_FREQ=${9}
+UPDATE_FREQ=${10}
 # learning rate
-LR=${10}
+LR=${11}
 # wandb project name for logging
-WANDB_PROJECT=${11}
+WANDB_PROJECT=${12}
 # wandb group name for logging (can be user name)
-WANDB_ENTITY=${12}
+WANDB_ENTITY=${13}
 # MOD code folder
-MOD_FOLDER=${13}
+MOD_FOLDER=${14}
 # identifier of this run in the sweep
-ID=${14}
+ID=${15}
 
 
 # list of domains you'd like to train on, that can be found in $DATA_PATH
@@ -40,7 +43,7 @@ valid_subset=valid_1b,valid_cs,valid_legal,valid_med,valid_anonymized_openwebtex
 TOKENS_PER_SAMPLE=1024;
 BATCH_SIZE=2;
 LOG_INTERVAL=50;
-KEEP_INTERVAL_UPDATES=30;
+KEEP_INTERVAL_UPDATES=5;
 
 if [[ $ARCH == *"gpt3_small"* ]]; then
      CLIP_NORM=0.1;
@@ -160,6 +163,7 @@ if [[ $EXPERIMENT == *"demix"* ]]; then
           --untie-parameters feedforward \
           --data-parallel-groups "${DATA_PARALLEL_GROUPS}" \
           --all-gather-list-size 32000 \
+	  --stop-time-hours $STOP_TIME_HOURS \
           $RESET_DATALOADER_PHRASE \
           --pad-to-fixed-length;
 elif [[ $EXPERIMENT == *"unbalanced"* ]]; then
@@ -202,6 +206,7 @@ elif [[ $EXPERIMENT == *"unbalanced"* ]]; then
           --distributed-port $PORT \
           --all-gather-list-size 32000 \
           --ddp-backend no_c10d \
+	  --stop-time-hours $STOP_TIME_HOURS \
           $RESET_DATALOADER_PHRASE \
           --unbalanced;
 elif [[ $EXPERIMENT == *"dense"* ]]; then
@@ -243,6 +248,7 @@ elif [[ $EXPERIMENT == *"dense"* ]]; then
           --distributed-world-size $NUM_GPUS \
           --distributed-port $PORT \
           --ddp-backend no_c10d \
+	  --stop-time-hours $STOP_TIME_HOURS \
           $RESET_DATALOADER_PHRASE \
           --all-gather-list-size 32000;
 elif [[ $EXPERIMENT == *"switch"* ]]; then
@@ -292,6 +298,7 @@ elif [[ $EXPERIMENT == *"switch"* ]]; then
           --distributed-world-size $NUM_GPUS \
           --distributed-port $PORT \
           --ddp-backend no_c10d \
+	  --stop-time-hours $STOP_TIME_HOURS \
           $RESET_DATALOADER_PHRASE \
           --all-gather-list-size 32000;
 elif [[ $EXPERIMENT == *"gshard"* ]]; then
@@ -339,6 +346,7 @@ elif [[ $EXPERIMENT == *"gshard"* ]]; then
           --moe-second-expert-policy all \
           --distributed-world-size $NUM_GPUS \
           --distributed-port $PORT \
+	  --stop-time-hours $STOP_TIME_HOURS \
           --ddp-backend no_c10d \
           $RESET_DATALOADER_PHRASE \
           --all-gather-list-size 32000;
@@ -383,6 +391,7 @@ elif [[ $EXPERIMENT == *"domain_token"* ]]; then
           --distributed-port $PORT \
           --all-gather-list-size 32000 \
           --ddp-backend no_c10d \
+	  --stop-time-hours $STOP_TIME_HOURS \
           $RESET_DATALOADER_PHRASE \
           --add-domain-token;
 fi;

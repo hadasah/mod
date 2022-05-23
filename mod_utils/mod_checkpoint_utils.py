@@ -57,7 +57,10 @@ def main(CHECKPOINTS_TOP_FOLDER, NEW_MODEL_TOP_FOLDER, subfolder, new_subfolder,
     # zipped_name_and_num.sort(key=lambda i: sort_factor * i[0])
     # print('zipped_name_and_num', zipped_name_and_num)
     # src_checkpoint_update_id = zipped_name_and_num[min(range(len(zipped_name_and_num)), key=lambda i: abs(zipped_name_and_num[i][0]-src_update_num))][1]
-    src_checkpoint_update_id = f"checkpoint_1_{load_from_step}"
+    if load_from_step == -1:
+        src_checkpoint_update_id = f"checkpoint_last"
+    else:
+        src_checkpoint_update_id = f"checkpoint_1_{load_from_step}"
     # print('src_checkpoint_update_id', src_checkpoint_update_id)
     if 'checkpoint_last.pt' in files: #dense
         # for domain_id in range(8):
