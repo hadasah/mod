@@ -23,7 +23,7 @@ def add_args():
     parser.add_argument('--subfolder', type=str)
     parser.add_argument('--new-subfolder', type=str)
     parser.add_argument('--load-from-step', type=int)
-    parser.add_argument('--domain-id', type=int)
+    parser.add_argument('--domain-id', type=str)
     return parser.parse_args()
 
 def main(CHECKPOINTS_TOP_FOLDER, NEW_MODEL_TOP_FOLDER, subfolder, new_subfolder, load_from_step, domain_id):

@@ -44,7 +44,7 @@ DOMAIN=$DOMAIN_ID;
 DATA_PATH=$TOP_DATA_PATH;
 
 domains=${DOMAIN};
-train_subset=train_${DOMAIN};
+train_subset=train;
 valid_subset=valid_${DOMAIN};
 
 
@@ -158,4 +158,5 @@ python $MOD_FOLDER/fairseq_cli/train.py  $DATA_PATH \
      --required-batch-size-multiple 1 \
      --fp16 \
      --unbalanced \
+     --no-epoch-checkpoints \
      --all-gather-list-size 32000;

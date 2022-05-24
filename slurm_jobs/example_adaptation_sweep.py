@@ -52,11 +52,10 @@ def main(model, debug=False, dry_mode=False, from_scratch=False, domains=None, l
                 "CHECKPOINTS_SUBFOLDER": '.',
                 "LOAD_FROM_STEP": [-1],
                 "RESET_ITEMS": ['meters,dataloader,optimizer,lr-scheduler'],
-                "NUM_STEPS": [10000],
+                "NUM_STEPS": [500],
                 "STOP_TIME_HOURS": [60],
                 "UPDATE_FREQ": [SPECS['UF']],
-                "AVERAGE": ["False"],
-
+                "AVERAGE": ["True"],
                 "LR": [SPECS['LR'] * .1],
                 "PORT": [np.random.randint(1024, 65535)],
                 "WANDB_PROJECT": ['mod_test'],
