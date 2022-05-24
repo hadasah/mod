@@ -15,8 +15,8 @@ CONSTANTS = {
     },
     # Suchin's FAIR account
     "suching": {
-        "DATA_BIN": '/private/home/suching/raw_data/demix_scale/data-bin/',
-        #"DATA_BIN":'/private/home/suching/raw_data/data-bin-big/',
+        # "DATA_BIN": '/private/home/suching/raw_data/demix_scale/data-bin/',
+        "DATA_BIN":'/private/home/suching/raw_data/data-bin-big/',
         "MOD_FOLDER":'/private/home/suching/mod/',
         "MODEL_FOLDER":'/checkpoint/suching/mod_publication/',
         "LOG_FOLDER": '/checkpoint/suching/mod_publication/',

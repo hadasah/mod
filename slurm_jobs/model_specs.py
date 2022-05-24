@@ -24,9 +24,13 @@ SPECS = {
 }
 EVAL_FOLDERS = {
         "transformer_lm_gpt3_small": {
-            "dense": "/checkpoint/suching/baselines/small_dense/",
-            "demix": "/checkpoint/suching/baselines/small_demix/",
-            "mod": "/checkpoint/suching/mod/_modular_gpt3_small_80K/modular_gpt3_small_80K_LR\=0.0005/"},
+            "dense": "/checkpoint/suching/mod_baselines/MODEL=transformerlmgpt3small_NUMGPUS=16_EXPERIMENT=dense_NUMSTEPS=80000_UPDATEFREQ=32_LR=0.0005/",
+            "demix": "/checkpoint/suching/mod_baselines/MODEL=transformerlmgpt3small_NUMGPUS=16_EXPERIMENT=demix_NUMSTEPS=80000_UPDATEFREQ=32_LR=0.0005/",
+            "mod": "/checkpoint/suching/mod/_modular_gpt3_small_80K/modular_gpt3_small_80K_LR=0.0005/"
+        },
         "transformer_lm_gpt3_medium": {
-            "dense": "/checkpoint/suching/mod_baselines/MODEL=transformerlmgpt3medium_NUMGPUS=32_EXPERIMENT=dense_NUMSTEPS=32000_UPDATEFREQ=32_LR=0.0005"}
+            "dense": "/checkpoint/suching/mod_baselines/MODEL=transformerlmgpt3medium_NUMGPUS=32_EXPERIMENT=dense_NUMSTEPS=32000_UPDATEFREQ=32_LR=0.0005/",
+            "demix": "/checkpoint/suching/mod_baselines/MODEL=transformerlmgpt3medium_NUMGPUS=32_EXPERIMENT=demix_NUMSTEPS=32000_UPDATEFREQ=32_LR=0.0005/",
+            "mod": "/checkpoint/suching/mod/_modular_transformer_lm_gpt3_medium/modular_transformer_lm_gpt3_medium_LR=0.0005/"
+        }
 }

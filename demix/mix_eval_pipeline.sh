@@ -28,9 +28,11 @@ exclude_expert=${13}
 
 only_use_expert=${14} 
 
-MOD_FOLDER=${15}
+arch=${15}
 
-jq_path=${16}
+MOD_FOLDER=${16}
+
+jq_path=${17}
 
 echo $model_type
 OIFS=$IFS;
@@ -38,9 +40,9 @@ IFS=','
 read -a model_checkpoint_ids <<< "$CHECKPOINT_IDS";
 IFS=$OIFS;
 
-IDS_TO_DOMAINS=('1b' 'anonymized_openwebtext' 'anonymized_realnews' 'anonymized_reviews' 'cs' 'legal' 'med' 'reddit' 'anonymized_latest_news_redo' 'anonymized_tweets_redo' 'anonymized_yelp_reviews_redo' 'cord19-redo' 'github_redo' 'gutenberg' 'legal_contracts' 'qasper');
+# IDS_TO_DOMAINS=('1b' 'anonymized_openwebtext' 'anonymized_realnews' 'anonymized_reviews' 'cs' 'legal' 'med' 'reddit' 'anonymized_latest_news_redo' 'anonymized_tweets_redo' 'anonymized_yelp_reviews_redo' 'cord19-redo' 'github_redo' 'gutenberg' 'legal_contracts' 'qasper');
 
-target_domain=${IDS_TO_DOMAINS[$target_domain_ID]}
+target_domain=$target_domain_ID
 
 model=;
 
@@ -63,8 +65,14 @@ elif [[ "$model_type" == "modular" ]]; then
 #/checkpoint/suching/suchin_mod//small//_EXPERIMENT=demix_mod_NUMSTEPS=36000_LR=0.001/DOMAIN_3/6000/
             # model=${model}:${ROOT_MODEL_FOLDER}/${MODEL_FOLDER}/DOMAIN_${i}/$num_steps/checkpoint_last-rank-0.pt
 
-            ## TODO(suchin): un-hardcode this!!
-            model=${model}:${ROOT_MODEL_FOLDER}/MODEL=transformerlmgpt3medium_DOMAINID=${i}_LOADFROMSTEP=${num_steps}_RESETITEMS=dataloader_UPDATEFREQ=32_LR=0.0005/checkpoint_${model_checkpoint_ids[$i]}.pt;
+            if [[ $arch == "transformer_lm_gpt3_small" ]]; then
+                modelid="transformerlmgpt3small";
+            elif [[ $arch == "transformer_lm_gpt3_medium" ]]; then
+                modelid="transformerlmgpt3medium";
+            fi;
+
+            model=${model}:${ROOT_MODEL_FOLDER}/MODEL=${modelid}_DOMAINID=${i}_LOADFROMSTEP=${num_steps}_RESETITEMS=dataloader_UPDATEFREQ=32_LR=0.0005/checkpoint_${model_checkpoint_ids[$i]}.pt;
+
             # /checkpoint/suching/mod_publication/mod/small/PHASE1_16GPU_MOD_2GPU_DOMAIN_7_MOD_STEPS_72000_PHASE1_DENSE
             # if [[ $i == 7 ]]; then
                 # model=${model}:${ROOT_MODEL_FOLDER}/${MODEL_FOLDER}/MOD_2_GPU_DOMAIN_1_MOD_STEPS_FROM_SCRATCH/checkpoint_${model_checkpoint_ids[$i]}.pt;
