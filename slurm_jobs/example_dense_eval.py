@@ -4,7 +4,7 @@ import re
 from slurm_jobs.slurm_constants import *
 from slurm_jobs.model_specs import EVAL_FOLDERS
 import argparse
-
+from pathlib import Path
 
 def main(model, domains, data_bin=None, debug=False, dry_mode=False):
 
@@ -28,9 +28,16 @@ def main(model, domains, data_bin=None, debug=False, dry_mode=False):
     EVAL_FOLDER = EVAL_FOLDERS[MODEL]
     MODEL_FOLDER = EVAL_FOLDER['dense']
 
-
-    DATA_BIN = RUN_CONSTANTS.get('DATA_BIN')
+    if data_bin:
+        DATA_BIN = data_bin
+    else:
+        DATA_BIN = RUN_CONSTANTS.get('DATA_BIN')
     JQ_PATH = RUN_CONSTANTS.get('JQ_PATH')
+
+    # make sure all specified domains exist in data-bin folder
+    assert all([Path(DATA_BIN) / x in Path(DATA_BIN).glob("*/") for x in domains])
+
+
 
     # This regex looks in MODEL_FOLDER's subfolders for matches
     # WANTED_FOLDER_REGEX = 'MODEL=transformerlmgpt3small_DOMAINID=0_PHASEONERATIO=0.6_RESETITEMS=dataloader_UPDATEFREQ=32_LR=0.0005'

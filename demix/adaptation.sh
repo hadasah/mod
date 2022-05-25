@@ -23,19 +23,20 @@ RESET_ITEMS=${10}
 # SERIALIZATION_DIR=$SERIALIZATION_DIR/$PHASE_ONE_RATIO
 
 NUM_STEPS=${11};
-STOP_TIME_HOURS=${12};
-UPDATE_FREQ=${13};
-AVERAGE=${14};
-LR=${15};
-PORT=${16};
+AVERAGE=${12};
+AVERAGE_WEIGHTS=${13};
+STOP_TIME_HOURS=${14};
+UPDATE_FREQ=${15};
+LR=${16};
+PORT=${17};
 # name of wandb project to track model output (at wandb.ai)
-WANDB_PROJECT=${17};
+WANDB_PROJECT=${18};
 # name of wandb entity 
-WANDB_ENTITY=${18};
+WANDB_ENTITY=${19};
 
-MOD_FOLDER=${19};
+MOD_FOLDER=${20};
 
-RUN_ID=${20};
+RUN_ID=${21};
 
 
 #IDS_TO_DOMAINS=('1b' 'anonymized_openwebtext' 'anonymized_realnews' 'anonymized_reviews' 'cs' 'legal' 'med' 'reddit' 'anonymized_latest_news_redo' 'anonymized_tweets_redo' 'anonymized_yelp_reviews_redo' 'cord19-redo' 'github_redo' 'gutenberg' 'legal_contracts' 'qasper');
@@ -98,7 +99,7 @@ if [[ $OLD_DIR != "None" ]]; then
           NEW_SUBFOLDER_PHRASE="--new-subfolder $RUN_ID ";
      fi;
      if [[ $AVERAGE == "True" ]]; then
-        python $MOD_FOLDER/mod_utils/average.py --output-dir $SERIALIZATION_DIR/$RUN_ID;
+        python $MOD_FOLDER/mod_utils/average.py --output-dir $SERIALIZATION_DIR/$RUN_ID --weights $AVERAGE_WEIGHTS;
     else
      python $MOD_FOLDER/mod_utils/mod_checkpoint_utils.py \
           --old-folder $OLD_DIR \

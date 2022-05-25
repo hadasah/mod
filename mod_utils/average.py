@@ -36,6 +36,6 @@ def main(output_dir, weights):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--output-dir", type=Path)
-    parser.add_argument("--weights", type=float, nargs='+')
+    parser.add_argument("--weights", type=str)
     args = parser.parse_args()
-    main(args.output_dir)
+    main(args.output_dir, [float(x) for x in args.weights.split(',')])

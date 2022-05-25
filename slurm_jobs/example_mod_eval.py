@@ -4,7 +4,7 @@ import os
 import re
 import argparse
 from slurm_jobs.model_specs import EVAL_FOLDERS
-
+from pathlib import Path
 
 def main(model, load_from_step, domains, data_bin=None, debug=False, dry_mode=False):
     username = os.getlogin()
@@ -23,6 +23,9 @@ def main(model, load_from_step, domains, data_bin=None, debug=False, dry_mode=Fa
     DRY_MODE = dry_mode
     name_keys = []
     NUM_GPUS = 8
+
+    # make sure all specified domains exist in data-bin folder
+    assert all([Path(DATA_BIN) / x in Path(DATA_BIN).glob("*/") for x in domains])
 
     # /checkpoint/suching/suchin_mod_8_GPUs/small/_EXPERIMENT=dense_NUMSTEPS=36000_LR=0.001/_DOMAIN_5_MOD_STEPS_30000_PHASE1_DENSE
     # /checkpoint/suching/mod_sweep/_modular_gpt3_small_36K/modular_gpt3_small_36K_LR=0.001/MODEL=transformerlmgpt3small_DOMAINID=7_PHASEONERATIO=0.25_RESETITEMS=dataloader,meters_UPDATEFREQ=32_LR=0.001
@@ -45,7 +48,7 @@ def main(model, load_from_step, domains, data_bin=None, debug=False, dry_mode=Fa
     # print(selected_folders)
 
     MODEL=model
-    SWEEP_NAME = f"eval_sweep_{MODEL}_dense"
+    SWEEP_NAME = f"eval_sweep_{MODEL}_mod_LOAD_FROM_STEP_{load_from_step}"
     EVAL_FOLDER = EVAL_FOLDERS[MODEL]
     ROOT_MODEL_FOLDER = EVAL_FOLDER['mod']
 
