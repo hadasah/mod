@@ -18,7 +18,6 @@ def main(model, load_from_step, domains, data_bin=None, debug=False, dry_mode=Fa
         DATA_BIN = RUN_CONSTANTS.get('DATA_BIN')
     JQ_PATH = RUN_CONSTANTS.get('JQ_PATH')
 
-    SWEEP_NAME = f"eval_sweep_{model}_mod_LOAD_FROM_STEP_{load_from_step}"
     DEBUG_MODE = debug
     DRY_MODE = dry_mode
     name_keys = []
@@ -35,13 +34,15 @@ def main(model, load_from_step, domains, data_bin=None, debug=False, dry_mode=Fa
     # This regex looks in MODEL_FOLDER's subfolders for matches
     WANTED_FOLDER_REGEX = '.*'
     # Used to distinguish between my naming conventions for demix vs modular models
-    MODEL_TYPE = 'modular'
+    MODEL_TYPE = 'mod'
     # Determines where the posteriors and results gets saved 
-    EVAL_FOLDER_ID = 'Base_dense_LOAD_FROM_STEP_24000_LR_0.0005'
+    EVAL_FOLDER_ID = f'Base_dense_LOAD_FROM_STEP_{load_from_step}_LR_0.0005'
     # Comma separated list of the checkpoint IDs. 
     #Unfortunately this can't be set per job, I'm assuming we're always setting the right # updates
     CHECKPOINT_IDS = 'last,last,last,last,last,last,last,last'
-    EVAL_SCRIPT = f'{MOD_FOLDER}/demix/mix_eval_pipeline.sh' if MODEL_TYPE in ['demix', 'modular'] else f'{MOD_FOLDER}/demix/eval_pipeline.sh'
+    # CHECKPOINT_IDS = 'best,best,best,best,best,best,best,best'
+
+    EVAL_SCRIPT = f'{MOD_FOLDER}/demix/mix_eval_pipeline.sh' if MODEL_TYPE in ['demix', 'mod'] else f'{MOD_FOLDER}/demix/eval_pipeline.sh'
     # all_runs = os.listdir("/checkpoint/suching/mod/_modular_transformer_lm_gpt3_medium/modular_transformer_lm_gpt3_medium_LR=0.0005/")
     # regex = re.compile(WANTED_FOLDER_REGEX)
     # selected_folders = [folder for folder in all_runs if regex.match(folder)]
@@ -50,7 +51,12 @@ def main(model, load_from_step, domains, data_bin=None, debug=False, dry_mode=Fa
     MODEL=model
     SWEEP_NAME = f"eval_sweep_{MODEL}_mod_LOAD_FROM_STEP_{load_from_step}"
     EVAL_FOLDER = EVAL_FOLDERS[MODEL]
-    ROOT_MODEL_FOLDER = EVAL_FOLDER['mod']
+    ROOT_MODEL_FOLDER = EVAL_FOLDER[MODEL_TYPE]
+
+    if not domains:
+        DOMAINS = [i for i in range(16)]
+    else:
+        DOMAINS = domains
 
     # if model == 'transformer_lm_gpt3_small':
     #     ROOT_MODEL_FOLDER = "/checkpoint/suching/mod/_modular_gpt3_small_80K/modular_gpt3_small_80K_LR=0.0005/"
@@ -65,7 +71,7 @@ def main(model, load_from_step, domains, data_bin=None, debug=False, dry_mode=Fa
                 "ROOT_MODEL_FOLDER": [ROOT_MODEL_FOLDER],
                 "MODEL_FOLDER": ['.'],
                 "CHECKPOINT_IDS": [CHECKPOINT_IDS],
-                "DOMAIN_ID": domains,
+                "DOMAIN_ID": DOMAINS,
                 "ENSEMBLE_TYPE": ['cached_prior'],
                 "MODEL_TYPE": [MODEL_TYPE],
                 # "GENERALIST_MODEL": ["/checkpoint/suching/margaret_sweep_rerun/small/_EXPERIMENT=dense_NUMSTEPS=36000_LR=0.001/checkpoint_1_30000.pt"],

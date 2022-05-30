@@ -372,7 +372,7 @@ def load_model_ensemble_and_task(
     partial_load=False,
     desynchronize=False
 ):
-    print(f"load_model_ensemble_and_task moe_freq={moe_freq}, desynchronize={desynchronize}")
+    print(f"load_model_ensemble_and_task moe_freq={moe_freq}, desynchronize={desynchronize}, partial_load={partial_load}")
     assert state is None or len(filenames) == 1
 
     from fairseq import tasks
@@ -441,7 +441,23 @@ def checkpoint_paths(path, pattern=r"checkpoint(\d+)\.pt"):
     return [os.path.join(path, x[1]) for x in sorted(entries, reverse=True)]
 
 
-def torch_persistent_save(obj, f):
+def torch_persistent_save(obj, filename, async_write: bool = False):
+    if async_write:
+        with PathManager.opena(filename, "wb") as f:
+            _torch_persistent_save(obj, f)
+    else:
+        if PathManager.supports_rename(filename):
+            # do atomic save
+            with PathManager.open(filename + ".tmp", "wb") as f:
+                _torch_persistent_save(obj, f)
+            PathManager.rename(filename + ".tmp", filename)
+        else:
+            # fallback to non-atomic save
+            with PathManager.open(filename, "wb") as f:
+                _torch_persistent_save(obj, f)
+
+
+def _torch_persistent_save(obj, f):
     if isinstance(f, str):
         with PathManager.open(f, "wb") as h:
             torch_persistent_save(obj, h)
@@ -452,7 +468,7 @@ def torch_persistent_save(obj, f):
         except Exception:
             if i == 2:
                 logger.error(traceback.format_exc())
-
+                raise
 
 def save_state(
     filename,

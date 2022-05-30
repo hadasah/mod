@@ -40,19 +40,23 @@ IFS=','
 read -a model_checkpoint_ids <<< "$CHECKPOINT_IDS";
 IFS=$OIFS;
 
-# IDS_TO_DOMAINS=('1b' 'anonymized_openwebtext' 'anonymized_realnews' 'anonymized_reviews' 'cs' 'legal' 'med' 'reddit' 'anonymized_latest_news_redo' 'anonymized_tweets_redo' 'anonymized_yelp_reviews_redo' 'cord19-redo' 'github_redo' 'gutenberg' 'legal_contracts' 'qasper');
+IDS_TO_DOMAINS=('1b' 'anonymized_openwebtext' 'anonymized_realnews' 'anonymized_reviews' 'cs' 'legal' 'med' 'reddit' 'anonymized_latest_news_redo' 'anonymized_tweets_redo' 'anonymized_yelp_reviews_redo' 'cord19-redo' 'github_redo' 'gutenberg' 'legal_contracts' 'qasper');
 
-target_domain=$target_domain_ID
+target_domain=${IDS_TO_DOMAINS[$target_domain_ID]}
 
 model=;
 
+# expert_count=32;
+
 if [[ "$model_type" == "demix" ]]; then
-    for i in $(seq 0 2 15); do
+
+    # for i in $(seq 0 {$expert_count/8} $expert_count); do
+    for i in $(seq 0 4 32); do
         if ([[ "$exclude_expert" != "True" ]] || [[ "$i" != "$target_domain_ID" ]]) && ([[ "$only_use_expert" != "True" ]] || [[ "$i" == "$target_domain_ID" ]]) && [[ "${model_checkpoint_ids[$i]}" != "None" ]]; then
             model=${model}:${ROOT_MODEL_FOLDER}/${MODEL_FOLDER}/checkpoint_best-rank-${i}.pt; 
         fi;
     done
-elif [[ "$model_type" == "modular" ]]; then
+elif [[ "$model_type" == "mod" ]]; then
     if [[ "$generalist_model" != "None" ]]; then
 	start=1;
     else start=0;

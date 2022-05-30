@@ -40,7 +40,6 @@ def main(model, experiment, debug=False, dry_mode=False):
                 "WANDB_PROJECT": ['publication-test'],
                 "WANDB_ENTITY": ['scaling-demix'],
                 "MOD_FOLDER": [MOD_FOLDER],
-                "ID": [""]
             },
             'named_args': {},
         },
@@ -59,7 +58,7 @@ def main(model, experiment, debug=False, dry_mode=False):
             #TODO change these
             account=RUN_CONSTANTS['SLURM_ACCOUNT'],
             partition=RUN_CONSTANTS['SLURM_PARTITION'],
-            jobtime='80:00:00',
+            jobtime='54:00:00',
             mem_gb=480,
             job_id_start=1,
             debug_mode=DEBUG_MODE,

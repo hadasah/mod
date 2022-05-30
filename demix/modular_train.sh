@@ -33,7 +33,9 @@ WANDB_ENTITY=${16};
 
 MOD_FOLDER=${17};
 
-RUN_ID=${18}
+DISTRIBUTED_PORT=${18};
+
+RUN_ID=${19}
 
 IDS_TO_DOMAINS=('1b' 'anonymized_openwebtext' 'anonymized_realnews' 'anonymized_reviews' 'cs' 'legal' 'med' 'reddit');
 DOMAIN=${IDS_TO_DOMAINS[$DOMAIN_ID]};
@@ -86,7 +88,7 @@ read -a reset_vals <<< "$RESET_ITEMS";
 IFS=$OIFS;
 
 if [ $NUM_GPUS \> 1 ]; then
-     DISTRIBUTED_ARGS_PHRASE="--ddp-backend no_c10d --distributed-world-size $NUM_GPUS --distributed-port 12345";
+     DISTRIBUTED_ARGS_PHRASE="--ddp-backend no_c10d --distributed-world-size $NUM_GPUS --distributed-port $DISTRIBUTED_PORT";
 fi;
 
 if [[ $OLD_DIR != "None" ]]; then

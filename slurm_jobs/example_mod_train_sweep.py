@@ -4,7 +4,7 @@ from slurm_jobs.slurm_job import run_grid
 import fairseq
 import os
 import argparse
-
+import numpy as np
 
 def main(model, debug=False, dry_mode=False, from_scratch=False, domains=None, load_from_step=0):
     DEBUG_MODE = debug
@@ -31,17 +31,18 @@ def main(model, debug=False, dry_mode=False, from_scratch=False, domains=None, l
 
     if FROM_SCRATCH:
         PATH_TO_DENSE_CHECKPOINTS = "None"
-        NEW_MODEL_TOP_FOLDER = f'/checkpoint/suching/mod/_modular_{MODEL}/modular_{MODEL}_LR={SPECS["LR"]}_from_scratch/'
-        SWEEP_NAME += "_from_scratch"
+        NEW_MODEL_TOP_FOLDER = f'/checkpoint/{username}/mod/_modular_{MODEL}/modular_{MODEL}_LR={SPECS["LR"]}/'
+        # SWEEP_NAME += "_from_scratch"
         FOLDERS = ["None"]
         SPECS['MOD_FROM_STEPS'] = [0]
     else:
         # modify to path to dense checkpoint you want to use
         if MODEL == 'transformer_lm_gpt3_small':
-            PATH_TO_DENSE_CHECKPOINTS = '/checkpoint/suching/mod_baselines/MODEL=transformerlmgpt3small_NUMGPUS=16_EXPERIMENT=dense_NUMSTEPS=80000_UPDATEFREQ=32_LR=0.0005/'
+            # PATH_TO_DENSE_CHECKPOINTS = '/checkpoint/suching/mod_baselines/MODEL=transformerlmgpt3small_NUMGPUS=16_EXPERIMENT=dense_NUMSTEPS=80000_UPDATEFREQ=32_LR=0.0005/'
+            PATH_TO_DENSE_CHECKPOINTS = '/checkpoint/suching/fp16/dense_small/'
         elif MODEL == 'transformer_lm_gpt3_medium':
-            PATH_TO_DENSE_CHECKPOINTS = '/checkpoint/suching/mod_publication/NUMGPUS=32_EXPERIMENT=dense_NUMSTEPS=32000_UPDATEFREQ=32_LR=0.0005/'
-        NEW_MODEL_TOP_FOLDER = f'/checkpoint/suching/mod/_modular_{MODEL}/modular_{MODEL}_LR={SPECS["LR"]}/'
+            PATH_TO_DENSE_CHECKPOINTS = '/checkpoint/suching/mod_baselines/MODEL=transformerlmgpt3medium_NUMGPUS=32_EXPERIMENT=dense_NUMSTEPS=32000_UPDATEFREQ=32_LR=0.0005/'
+        NEW_MODEL_TOP_FOLDER = f'/checkpoint/{username}/mod/_modular_{MODEL}/modular_{MODEL}_LR={SPECS["LR"]}/'
         re_string = ''
         FOLDERS = mod_checkpoint_utils.find_folders(PATH_TO_DENSE_CHECKPOINTS, re_string=re_string)
         print(FOLDERS)
@@ -70,6 +71,7 @@ def main(model, debug=False, dry_mode=False, from_scratch=False, domains=None, l
                 "WANDB_PROJECT": ['mod_test'],
                 "WANDB_ENTITY": ['scaling-demix'],
                 "MOD_FOLDER": [MOD_FOLDER],
+                "DISTRIBUTED_PORT": [np.random.randint(1024, 65535)],
             },
             'named_args': {},
         },
@@ -87,7 +89,7 @@ def main(model, debug=False, dry_mode=False, from_scratch=False, domains=None, l
             nodes=NUM_NODES,
             account=RUN_CONSTANTS.get('SLURM_ACCOUNT'),
             partition=RUN_CONSTANTS.get('SLURM_PARTITION'),
-            jobtime="80:00:00",
+            jobtime="54:00:00",
             mem_gb=RUN_CONSTANTS.get('MEM_GB_MOD'),
             job_id_start=1,
             debug_mode=DEBUG_MODE,
