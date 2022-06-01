@@ -17,27 +17,56 @@ NUM_STEPS=${7}
 
 # save interval
 SAVE_INTERVAL_UPDATES=${8}
+DOMAINS=${9}
+VALID_SUBSET=${10}
+
 # stop time hours
-STOP_TIME_HOURS=${9}
+STOP_TIME_HOURS=${11}
 
 # update frequency
-UPDATE_FREQ=${10}
+UPDATE_FREQ=${12}
 # learning rate
-LR=${11}
+LR=${13}
 # wandb project name for logging
-WANDB_PROJECT=${12}
+WANDB_PROJECT=${14}
 # wandb group name for logging (can be user name)
-WANDB_ENTITY=${13}
+WANDB_ENTITY=${15}
 # MOD code folder
-MOD_FOLDER=${14}
+MOD_FOLDER=${16}
 # identifier of this run in the sweep
-ID=${15}
+ID=${17}
 
+# OIFS=$IFS;
+# IFS=','
+# read -a domains_ <<< "$DOMAINS";
+# IFS=$OIFS;
 
-# list of domains you'd like to train on, that can be found in $DATA_PATH
-domains=1b,cs,legal,med,anonymized_openwebtext,anonymized_realnews,reddit,anonymized_reviews;
+# # # list of domains you'd like to train on, that can be found in $DATA_PATH
+domains=$DOMAINS
+valid_subset=$VALID_SUBSET
+# function join_by {
+#   local d=${1-} f=${2-}
+#   if shift 2; then
+#     printf %s "$f" "${@/#/$d}"
+#   fi
+# }
+
+# domains=$(join_by , domains_)
+# valid_subset=''
+# for domain in "${domains_[@]}"; do
+#      domains=${domain},${domains};
+#      valid_subset="valid_${domain}",${valid_subset};
+# done
+
+domains=$domains| sed 's/\(.*\),/\1 /';
+
+valid_subset=$valid_subset| sed 's/\(.*\),/\1 /';
+
+echo $domains
+echo $valid_subset
+# domains=1b,cs,legal,med,anonymized_openwebtext,anonymized_realnews,reddit,anonymized_reviews;
 # validation datasets for each domain
-valid_subset=valid_1b,valid_cs,valid_legal,valid_med,valid_anonymized_openwebtext,valid_anonymized_realnews,valid_reddit,valid_anonymized_reviews;
+# valid_subset=valid_1b,valid_cs,valid_legal,valid_med,valid_anonymized_openwebtext,valid_anonymized_realnews,valid_reddit,valid_anonymized_reviews;
 # name of wandb project to track model output (at wandb.ai)
 
 TOKENS_PER_SAMPLE=1024;
@@ -69,7 +98,14 @@ elif [[ $ARCH == *"transformer_lm"* ]]; then
 fi;
 
 # $DATA_PARALLEL_GROUPS identifies which ranks we will synchronize over. "A,B C,D" means we will synchronize ranks A,B and synchronize ranks C,D.
-if [[ $NUM_GPUS == "8" ]]; then
+if [[ $NUM_GPUS == "2" ]]; then
+     if [[ $EXPERIMENT == *"dense"*  || $EXPERIMENT == *"domain_token"* ]]; then
+          DATA_PARALLEL_GROUPS="0 1";
+     elif  [[ $EXPERIMENT == *"demix"* ]]; then
+          DATA_PARALLEL_GROUPS="0 1";
+     fi;
+
+elif [[ $NUM_GPUS == "8" ]]; then
      if [[ $EXPERIMENT == *"dense"*  || $EXPERIMENT == *"domain_token"* ]]; then
           DATA_PARALLEL_GROUPS="0,1,2,3,4,5,6,7";
      elif  [[ $EXPERIMENT == *"demix"* ]]; then
@@ -80,6 +116,12 @@ elif [[ $NUM_GPUS == "16" ]]; then
           DATA_PARALLEL_GROUPS="0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15";
      elif  [[ $EXPERIMENT == *"demix"* ]]; then
           DATA_PARALLEL_GROUPS="0,1 2,3 4,5 6,7 8,9 10,11 12,13 14,15";
+     fi;
+elif [[ $NUM_GPUS == "24" ]]; then
+     if [[ $EXPERIMENT == *"dense"*  || $EXPERIMENT == *"domain_token"* ]]; then
+          DATA_PARALLEL_GROUPS="0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23";
+     elif  [[ $EXPERIMENT == *"demix"* ]]; then
+          DATA_PARALLEL_GROUPS="0,1,2 3,4,5 6,7,8 9,10,11 12,13,14 15,16,17 18,19,20 21,22,23";
      fi;
 elif [[ $NUM_GPUS == "32" ]]; then
      if [[ $EXPERIMENT == *"dense"*  || $EXPERIMENT == *"domain_token"* ]]; then

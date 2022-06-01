@@ -99,7 +99,7 @@ if [[ $OLD_DIR != "None" ]]; then
           NEW_SUBFOLDER_PHRASE="--new-subfolder $RUN_ID ";
      fi;
      if [[ $AVERAGE == "True" ]]; then
-        python $MOD_FOLDER/mod_utils/average.py --output-dir $SERIALIZATION_DIR/$RUN_ID --weights $AVERAGE_WEIGHTS;
+        python $MOD_FOLDER/mod_utils/average.py --output-dir $SERIALIZATION_DIR/$RUN_ID --weights $AVERAGE_WEIGHTS --additional-domains c4 Biology wikipedia gutenberg HTML JavaScript twitter stackexchange ;
     else
      python $MOD_FOLDER/mod_utils/mod_checkpoint_utils.py \
           --old-folder $OLD_DIR \

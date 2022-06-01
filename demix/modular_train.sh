@@ -35,8 +35,8 @@ MOD_FOLDER=${17};
 
 RUN_ID=${18}
 
-IDS_TO_DOMAINS=('1b' 'anonymized_openwebtext' 'anonymized_realnews' 'anonymized_reviews' 'cs' 'legal' 'med' 'reddit');
-DOMAIN=${IDS_TO_DOMAINS[$DOMAIN_ID]};
+# IDS_TO_DOMAINS=('1b' 'anonymized_openwebtext' 'anonymized_realnews' 'anonymized_reviews' 'cs' 'legal' 'med' 'reddit');
+DOMAIN=${DOMAIN_ID};
 DATA_PATH=$TOP_DATA_PATH;
 
 domains=${DOMAIN};
