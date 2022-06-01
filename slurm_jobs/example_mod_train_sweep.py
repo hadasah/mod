@@ -32,7 +32,7 @@ def main(model, debug=False, dry_mode=False, from_scratch=False, domains=None, l
     if FROM_SCRATCH:
         PATH_TO_DENSE_CHECKPOINTS = "None"
         NEW_MODEL_TOP_FOLDER = f'/checkpoint/suching/mod/_modular_{MODEL}/modular_{MODEL}_LR={SPECS["LR"]}_from_scratch/'
-        SWEEP_NAME += "_from_scratch"
+        # SWEEP_NAME += "_from_scratch"
         FOLDERS = ["None"]
         SPECS['MOD_FROM_STEPS'] = [0]
     else:
@@ -41,6 +41,8 @@ def main(model, debug=False, dry_mode=False, from_scratch=False, domains=None, l
             PATH_TO_DENSE_CHECKPOINTS = '/checkpoint/suching/mod_baselines/MODEL=transformerlmgpt3small_NUMGPUS=16_EXPERIMENT=dense_NUMSTEPS=80000_UPDATEFREQ=32_LR=0.0005/'
         elif MODEL == 'transformer_lm_gpt3_medium':
             PATH_TO_DENSE_CHECKPOINTS = '/checkpoint/suching/mod_publication/NUMGPUS=32_EXPERIMENT=dense_NUMSTEPS=32000_UPDATEFREQ=32_LR=0.0005/'
+        elif MODEL == 'transformer_lm_gpt3_large':
+            PATH_TO_DENSE_CHECKPOINTS = '/checkpoint/suching/mod_publication/NUMGPUS=64_EXPERIMENT=dense_NUMSTEPS=20000_UPDATEFREQ=32_LR=0.0005/'
         NEW_MODEL_TOP_FOLDER = f'/checkpoint/suching/mod/_modular_{MODEL}/modular_{MODEL}_LR={SPECS["LR"]}/'
         re_string = ''
         FOLDERS = mod_checkpoint_utils.find_folders(PATH_TO_DENSE_CHECKPOINTS, re_string=re_string)
@@ -87,12 +89,13 @@ def main(model, debug=False, dry_mode=False, from_scratch=False, domains=None, l
             nodes=NUM_NODES,
             account=RUN_CONSTANTS.get('SLURM_ACCOUNT'),
             partition=RUN_CONSTANTS.get('SLURM_PARTITION'),
-            jobtime="80:00:00",
+            jobtime="72:00:00",
             mem_gb=RUN_CONSTANTS.get('MEM_GB_MOD'),
             job_id_start=1,
             debug_mode=DEBUG_MODE,
             dry_mode=DRY_MODE,
             add_name='end',
+            volta32=True,
             DIR_PATH=MOD_FOLDER,
             logroot=NEW_MODEL_TOP_FOLDER,
             saveroot=NEW_MODEL_TOP_FOLDER,
@@ -104,7 +107,7 @@ if __name__ == '__main__':
     parser.add_argument('--debug', action='store_true')
     parser.add_argument('--dry-mode', action='store_true')
     parser.add_argument('--model', type=str)
-    parser.add_argument('--domains', type=int, nargs="+")
+    parser.add_argument('--domains', type=str, nargs="+")
     parser.add_argument('--load-from-step', type=int)
     parser.add_argument('--from-scratch', action='store_true')
     args = parser.parse_args()

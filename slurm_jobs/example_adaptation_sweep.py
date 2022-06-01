@@ -45,7 +45,7 @@ def main(model, debug=False, dry_mode=False, from_scratch=False, domains=None, d
         DOMAINS = domains
 
     if average_weights:
-        average_weights = ",".join(map(str, average_weights))
+        average_weights = average_weights
     else:
         average_weights = None
     if average:
@@ -115,7 +115,7 @@ if __name__ == '__main__':
     parser.add_argument('--load-from-step', type=int, default=-1)
     parser.add_argument('--from-scratch', action='store_true')
     parser.add_argument('--average', action='store_true')
-    parser.add_argument('--average-weights', type=float, nargs="+")
+    parser.add_argument('--average-weights', type=str)
     parser.add_argument('--data-bin', type=str)
 
     args = parser.parse_args()

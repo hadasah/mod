@@ -3,13 +3,15 @@ import argparse
 from slurm_jobs.slurm_constants import CONSTANTS
 import os
 import numpy as np
+from pathlib import Path
 
 
-def main(model, experiment, debug=False, dry_mode=False):
+def main(model, experiment, domains, data_bin, debug=False, dry_mode=False):
     DEBUG_MODE = debug
     DRY_MODE = dry_mode
     MODEL = model
-
+    
+    
     username = os.getlogin()
     RUN_CONSTANTS = CONSTANTS.get(username)
     if RUN_CONSTANTS is None:
@@ -17,10 +19,20 @@ def main(model, experiment, debug=False, dry_mode=False):
     MOD_FOLDER = RUN_CONSTANTS.get('MOD_FOLDER')
     from slurm_jobs.model_specs import SPECS
     SPECS = SPECS[MODEL]
+    if data_bin:
+        DATA_BIN = data_bin
+    else:
+        DATA_BIN = RUN_CONSTANTS.get('DATA_BIN')
+
     NUM_NODES = SPECS['NUM_GPUS'] // 8
     SWEEP_NAME = f"sweep_{MODEL}_{SPECS['NUM_GPUS']}_GPUs"
     
     name_keys = ["EXPERIMENT", "NUM_STEPS", "UPDATE_FREQ", "LR", "NUM_GPUS"]
+    
+    if not all([Path(DATA_BIN) / x in Path(DATA_BIN).glob("*/") for x in domains]):
+        print([Path(DATA_BIN) / x for x in domains if Path(DATA_BIN) / x not in Path(DATA_BIN).glob("*/")])
+        assert False
+
 
     grids = {
         SWEEP_NAME: {
@@ -31,9 +43,11 @@ def main(model, experiment, debug=False, dry_mode=False):
                 "MODEL": [MODEL],
                 "EXPERIMENT": [experiment],
                 "MODEL_DIR": [RUN_CONSTANTS.get('MODEL_FOLDER')],
-                "DATA_BIN": [RUN_CONSTANTS.get('DATA_BIN')],
+                "DATA_BIN": [DATA_BIN],
                 "NUM_STEPS": [SPECS['NUM_STEPS']],
                 "SAVE_INTERVAL_UPDATES": [SPECS['SAVE_INTERVAL_UPDATES']],
+                "DOMAINS": [",".join(domains)],
+                "VALID_SUBSET": [','.join(["valid_" + x for x in domains])],
                 "STOP_TIME_HOURS": [SPECS['TRAIN_HOURS']],
                 "UPDATE_FREQ": [SPECS["UF"]],
                 "LR": [SPECS["LR"]],
@@ -59,7 +73,7 @@ def main(model, experiment, debug=False, dry_mode=False):
             #TODO change these
             account=RUN_CONSTANTS['SLURM_ACCOUNT'],
             partition=RUN_CONSTANTS['SLURM_PARTITION'],
-            jobtime='80:00:00',
+            jobtime='72:00:00',
             mem_gb=480,
             job_id_start=1,
             debug_mode=DEBUG_MODE,
@@ -73,6 +87,8 @@ if __name__ == '__main__':
     parser.add_argument('--debug', action='store_true')
     parser.add_argument('--dry-mode', action='store_true')
     parser.add_argument('--model', type=str)
+    parser.add_argument('--domains', type=str, nargs="+")
+    parser.add_argument('--data-bin', type=str, default='/private/home/suching/raw_data/data-bin-big/')
     parser.add_argument('--experiment', type=str)
     args = parser.parse_args()
-    main(args.model, args.experiment, args.debug, args.dry_mode)
+    main(args.model, args.experiment, args.domains, args.data_bin, args.debug, args.dry_mode)

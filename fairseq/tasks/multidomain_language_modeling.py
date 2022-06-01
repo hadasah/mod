@@ -351,7 +351,7 @@ class MultidomainLanguageModelingTask(LegacyFairseqTask):
                 if split in self.args.train_subset.split(','):
                     gpus  = range(torch.distributed.get_world_size())
                     if len(gpus) >= 8:
-                        num_gpus_per_domain = torch.distributed.get_world_size() // 8
+                        num_gpus_per_domain = torch.distributed.get_world_size() // len(train_domains)
                     else:
                         num_gpus_per_domain = 1
                     gpu_mappings = [list(gpus[n:n+num_gpus_per_domain]) for n in range(0, len(gpus), num_gpus_per_domain)]
@@ -404,9 +404,8 @@ class MultidomainLanguageModelingTask(LegacyFairseqTask):
         for domain_id, domain in domains:
             split_path = os.path.join(data_path, domain, split)
             dataset = data_utils.load_indexed_dataset(
-                split_path, self.dictionary, self.args.dataset_impl, combine=combine
-            )
-
+                    split_path, self.dictionary, self.args.dataset_impl, combine=combine
+             )
             if dataset is None:
                 continue
 
