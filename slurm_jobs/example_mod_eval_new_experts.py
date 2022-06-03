@@ -22,7 +22,7 @@ def main(model, load_from_step, original_domains, additional_domains, evaluation
     DRY_MODE = dry_mode
     name_keys = []
     NUM_GPUS = 8
-    NUM_EXPERTS=24
+    NUM_EXPERTS = 24
     NUM_NODES = NUM_EXPERTS // NUM_GPUS
     # make sure all specified domains exist in data-bin folder
     if not all([Path(DATA_BIN) / x in Path(DATA_BIN).glob("*/") for x in evaluation_domains]):

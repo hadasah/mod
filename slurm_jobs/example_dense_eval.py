@@ -6,7 +6,7 @@ from slurm_jobs.model_specs import EVAL_FOLDERS
 import argparse
 from pathlib import Path
 
-def main(model, domains, data_bin=None, debug=False, dry_mode=False):
+def main(model, domains, data_bin=None, debug=False, dry_mode=False, tag=None):
 
     DEBUG_MODE = debug
     DRY_MODE = dry_mode
@@ -22,11 +22,13 @@ def main(model, domains, data_bin=None, debug=False, dry_mode=False):
 
     # MODEL_FOLDER = "/checkpoint/suching/mod/_modular_gpt3_small_80K/modular_gpt3_small_80K_LR=0.0005/"
 
-
+    if not tag:
+        tag = 'dense'
     MODEL=model
-    SWEEP_NAME = f"eval_sweep_{MODEL}_dense"
+    SWEEP_NAME = f"eval_sweep_{MODEL}_{tag}"
     EVAL_FOLDER = EVAL_FOLDERS[MODEL]
-    MODEL_FOLDER = EVAL_FOLDER['dense']
+    
+    MODEL_FOLDER = EVAL_FOLDER[tag]
 
     if data_bin:
         DATA_BIN = data_bin
@@ -100,8 +102,9 @@ if __name__ == '__main__':
     parser.add_argument('--debug', action='store_true')
     parser.add_argument('--dry-mode', action='store_true')
     parser.add_argument('--model', type=str)
+    parser.add_argument('--tag', type=str, default=None)
     parser.add_argument('--domains', type=str, nargs="+")
     parser.add_argument('--data-bin', type=str)
     args = parser.parse_args()
-    main(args.model,  args.domains, args.data_bin, args.debug, args.dry_mode)
+    main(args.model,  args.domains, args.data_bin, args.debug, args.dry_mode, args.tag)
 

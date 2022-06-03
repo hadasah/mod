@@ -22,7 +22,7 @@ MODEL_FOLDER = "/checkpoint/suching/mod_publication/"
 
 
 # This regex looks in MODEL_FOLDER's subfolders for matches
-WANTED_FOLDER_REGEX = '.*demix.*80000.*'
+WANTED_FOLDER_REGEX = '.*demix.*'
 # Used to distinguish between my naming conventions for demix vs modular models
 MODEL_TYPE = 'demix'
 # Determines where the posteriors and results gets saved 
