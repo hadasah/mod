@@ -27,7 +27,7 @@ def main(model, debug=False, dry_mode=False, from_scratch=False, domains=None, d
     SWEEP_NAME = f"sweep_{MODEL}_adaptation_average_{average}"
 
 
-    name_keys = ["MODEL",  "LOAD_FROM_STEP", "RESET_ITEMS", "LR", "UPDATE_FREQ", "DOMAIN_ID", "AVERAGE"]
+    name_keys = ["MODEL",  "LOAD_FROM_STEP", "RESET_ITEMS", "LR", "UPDATE_FREQ", "DOMAIN_ID", "AVERAGE", "NUM_STEPS"]
     from slurm_jobs.model_specs import SPECS
     SPECS = SPECS[MODEL]
     NUM_GPUS = SPECS['NUM_MOD_GPUS']
@@ -66,12 +66,11 @@ def main(model, debug=False, dry_mode=False, from_scratch=False, domains=None, d
                 "CHECKPOINTS_SUBFOLDER": '.',
                 "LOAD_FROM_STEP": [-1],
                 "RESET_ITEMS": ['meters,dataloader,optimizer,lr-scheduler'],
-                "NUM_STEPS": [10000],
+                "NUM_STEPS": [30000],
                 "AVERAGE": [average],
                 "AVERAGE_WEIGHTS": [average_weights],
-                "STOP_TIME_HOURS": [60],
+                "STOP_TIME_HOURS": [75],
                 "UPDATE_FREQ": [SPECS['UF']],
-
                 "LR": [SPECS['LR'] * .1],
                 "PORT": [np.random.randint(1024, 65535)],
                 "WANDB_PROJECT": ['mod_test'],

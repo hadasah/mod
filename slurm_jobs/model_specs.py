@@ -24,7 +24,7 @@ SPECS = {
                 "NUM_MOD_GPUS": 8,
                 "NUM_STEPS": 24000,
                 "TRAIN_HOURS": 48,
-                "MOD_FROM_STEPS": [2000,10000,20000],
+                "MOD_FROM_STEPS": [2000,10000,16000],
                 "SAVE_INTERVAL_UPDATES": 2000,
                 "LR": 5e-4,
                 "UF": 32
@@ -54,7 +54,13 @@ EVAL_FOLDERS = {
         },
         "transformer_lm_gpt3_large": {
             "dense": "",
-            "demix": "/checkpoint/suching/mod_baselines/MODEL\=transformerlmgpt3large_NUMGPUS=64_EXPERIMENT=demix_NUMSTEPS=24000_UPDATEFREQ=32_LR=0.0005/",
+            "demix": "/checkpoint/suching/mod_baselines/MODEL=transformerlmgpt3large_NUMGPUS=64_EXPERIMENT=demix_NUMSTEPS=24000_UPDATEFREQ=32_LR=0.0005/",
             "mod": "/checkpoint/suching/mod/_modular_transformer_lm_gpt3_large/modular_transformer_lm_gpt3_large_LR=0.0005/"
+        },
+        "transformer_lm_gpt3_xl": {
+            "dense": "",
+            "demix": "",
+            "mod": "",
+            "dense_32_domains": "/checkpoint/suching/mod_publication/NUMGPUS=128_EXPERIMENT=dense_NUMSTEPS=16000_UPDATEFREQ=32_LR=0.0005/",
         }
 }

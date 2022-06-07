@@ -6,7 +6,7 @@ from slurm_jobs.model_specs import EVAL_FOLDERS
 import argparse
 from pathlib import Path
 
-def main(model, domains, data_bin=None, debug=False, dry_mode=False, tag=None):
+def main(model, domains, path_to_model=None,  data_bin=None, debug=False, dry_mode=False, tag=None):
 
     DEBUG_MODE = debug
     DRY_MODE = dry_mode
@@ -22,13 +22,17 @@ def main(model, domains, data_bin=None, debug=False, dry_mode=False, tag=None):
 
     # MODEL_FOLDER = "/checkpoint/suching/mod/_modular_gpt3_small_80K/modular_gpt3_small_80K_LR=0.0005/"
 
-    if not tag:
-        tag = 'dense'
-    MODEL=model
-    SWEEP_NAME = f"eval_sweep_{MODEL}_{tag}"
-    EVAL_FOLDER = EVAL_FOLDERS[MODEL]
-    
-    MODEL_FOLDER = EVAL_FOLDER[tag]
+    if path_to_model:
+        MODEL_FOLDER = path_to_model
+        SWEEP_NAME = f"eval_sweep_average"
+    else:
+        if not tag:
+            tag = 'dense'
+        MODEL=model
+        SWEEP_NAME = f"eval_sweep_{MODEL}_{tag}"
+        EVAL_FOLDER = EVAL_FOLDERS[MODEL]
+        
+        MODEL_FOLDER = EVAL_FOLDER[tag]
 
     if data_bin:
         DATA_BIN = data_bin
@@ -37,7 +41,9 @@ def main(model, domains, data_bin=None, debug=False, dry_mode=False, tag=None):
     JQ_PATH = RUN_CONSTANTS.get('JQ_PATH')
 
     # make sure all specified domains exist in data-bin folder
-    assert all([Path(DATA_BIN) / x in Path(DATA_BIN).glob("*/") for x in domains])
+    if not all([Path(DATA_BIN) / x in Path(DATA_BIN).glob("*/") for x in domains]):
+        print([Path(DATA_BIN) / x for x in domains if Path(DATA_BIN) / x not in Path(DATA_BIN).glob("*/")])
+        assert False
 
 
 
@@ -50,7 +56,7 @@ def main(model, domains, data_bin=None, debug=False, dry_mode=False, tag=None):
     EVAL_FOLDER_ID = 'Base_dense'
     # Comma separated list of the checkpoint IDs. 
     #Unfortunately this can't be set per job, I'm assuming we're always setting the right # updates
-    CHECKPOINT_ID = 'best'
+    CHECKPOINT_ID = 'last'
 
     EVAL_SCRIPT = f'{MOD_FOLDER}/demix/mix_eval_pipeline.sh' if MODEL_TYPE in ['demix', 'modular'] else f'{MOD_FOLDER}/demix/eval_pipeline.sh'
     # all_runs = os.listdir(MODEL_FOLDER)
@@ -72,8 +78,19 @@ def main(model, domains, data_bin=None, debug=False, dry_mode=False, tag=None):
             'named_args': {},
         },
     }
-
-
+    if path_to_model is not None:
+        volta32=False
+        mem_gb=40
+        jobtime='2:00:00'
+    else:
+        if   "xl" in model or "large" in model:
+            volta32=True
+            mem_gb=140
+            jobtime='4:00:00'
+        else:
+            volta32=False
+            mem_gb=40
+            jobtime='2:00:00'
 
     for sweep_name, grid in grids.items():
         run_grid(
@@ -88,8 +105,9 @@ def main(model, domains, data_bin=None, debug=False, dry_mode=False, tag=None):
             #TODO change these
             account=RUN_CONSTANTS['SLURM_ACCOUNT'],
             partition=RUN_CONSTANTS['SLURM_PARTITION'],
-            jobtime='2:00:00',
-            mem_gb=40,
+            jobtime=jobtime,
+            mem_gb=mem_gb,
+            volta32=volta32,
             job_id_start=1,
             debug_mode=DEBUG_MODE,
             dry_mode=DRY_MODE,
@@ -101,10 +119,11 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--debug', action='store_true')
     parser.add_argument('--dry-mode', action='store_true')
+    parser.add_argument('--path-to-model', type=str)
     parser.add_argument('--model', type=str)
     parser.add_argument('--tag', type=str, default=None)
     parser.add_argument('--domains', type=str, nargs="+")
     parser.add_argument('--data-bin', type=str)
     args = parser.parse_args()
-    main(args.model,  args.domains, args.data_bin, args.debug, args.dry_mode, args.tag)
+    main(args.model,   args.domains, args.path_to_model, args.data_bin, args.debug, args.dry_mode, args.tag)
 

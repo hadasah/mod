@@ -286,7 +286,7 @@ elif [[ $EXPERIMENT == *"dense"* ]]; then
           --train-domains $domains  \
           --eval-domains $domains \
           --required-batch-size-multiple 1 \
-          --fp16 \
+          --memory-efficient-fp16 \
           --distributed-world-size $NUM_GPUS \
           --distributed-port $PORT \
           --ddp-backend no_c10d \

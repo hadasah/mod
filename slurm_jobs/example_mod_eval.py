@@ -37,7 +37,7 @@ def main(model, load_from_step, domains, data_bin=None, debug=False, dry_mode=Fa
     # Used to distinguish between my naming conventions for demix vs modular models
     MODEL_TYPE = 'modular'
     # Determines where the posteriors and results gets saved 
-    EVAL_FOLDER_ID = 'Base_dense_LOAD_FROM_STEP_24000_LR_0.0005'
+    EVAL_FOLDER_ID = f'Base_mod_LOAD_FROM_STEP_{load_from_step}_LR_0.0005'
     # Comma separated list of the checkpoint IDs. 
     #Unfortunately this can't be set per job, I'm assuming we're always setting the right # updates
     CHECKPOINT_IDS = 'last,last,last,last,last,last,last,last'

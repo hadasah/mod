@@ -47,7 +47,7 @@ target_domain=$target_domain_ID
 model=;
 
 if [[ "$model_type" == "demix" ]]; then
-    for i in $(seq 0 2 15); do
+    for i in $(seq 0 8 63); do
         if ([[ "$exclude_expert" != "True" ]] || [[ "$i" != "$target_domain_ID" ]]) && ([[ "$only_use_expert" != "True" ]] || [[ "$i" == "$target_domain_ID" ]]) && [[ "${model_checkpoint_ids[$i]}" != "None" ]]; then
             model=${model}:${ROOT_MODEL_FOLDER}/${MODEL_FOLDER}/checkpoint_best-rank-${i}.pt; 
         fi;
@@ -69,6 +69,8 @@ elif [[ "$model_type" == "modular" ]]; then
                 modelid="transformerlmgpt3small";
             elif [[ $arch == "transformer_lm_gpt3_medium" ]]; then
                 modelid="transformerlmgpt3medium";
+            elif [[ $arch == "transformer_lm_gpt3_large" ]]; then
+		modelid="transformerlmgpt3large";
             fi;
 
             model=${model}:${ROOT_MODEL_FOLDER}/MODEL=${modelid}_DOMAINID=${i}_LOADFROMSTEP=${num_steps}_RESETITEMS=dataloader_UPDATEFREQ=32_LR=0.0005/checkpoint_${model_checkpoint_ids[$i]}.pt;

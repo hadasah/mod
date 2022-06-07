@@ -22,7 +22,7 @@ def main(model, load_from_step, original_domains, additional_domains, evaluation
     DRY_MODE = dry_mode
     name_keys = []
     NUM_GPUS = 8
-    NUM_EXPERTS = 24
+    NUM_EXPERTS = 32
     NUM_NODES = NUM_EXPERTS // NUM_GPUS
     # make sure all specified domains exist in data-bin folder
     if not all([Path(DATA_BIN) / x in Path(DATA_BIN).glob("*/") for x in evaluation_domains]):
@@ -42,7 +42,7 @@ def main(model, load_from_step, original_domains, additional_domains, evaluation
     EVAL_FOLDER_ID = f'Base_dense_mod_LOAD_FROM_STEP_{load_from_step}_with_new_experts'
     # Comma separated list of the checkpoint IDs. 
     #Unfortunately this can't be set per job, I'm assuming we're always setting the right # updates
-    CHECKPOINT_IDS = 'last,last,last,last,last,last,last,last,last,last,last,last,last,last,last,last,last'
+    CHECKPOINT_IDS = 'last,last,last,last,last,last,last,last,last,last,last,last,last,last,last,last,last,last,last,last,last,last,last,last,last,last,last,last,last,last,last'
     EVAL_SCRIPT = f'{MOD_FOLDER}/demix/mix_eval_pipeline_1.sh' if MODEL_TYPE in ['demix', 'modular'] else f'{MOD_FOLDER}/demix/eval_pipeline.sh'
     # all_runs = os.listdir("/checkpoint/suching/mod/_modular_transformer_lm_gpt3_medium/modular_transformer_lm_gpt3_medium_LR=0.0005/")
     # regex = re.compile(WANTED_FOLDER_REGEX)
@@ -50,7 +50,7 @@ def main(model, load_from_step, original_domains, additional_domains, evaluation
     # print(selected_folders)
 
     MODEL=model
-    SWEEP_NAME = f"eval_sweep_{MODEL}_mod_LOAD_FROM_STEP_{load_from_step}_with_new_experts"
+    SWEEP_NAME = f"eval_sweep_{MODEL}_mod_LOAD_FROM_STEP_{load_from_step}_with_{NUM_EXPERTS}__new_experts"
     EVAL_FOLDER = EVAL_FOLDERS[MODEL]
     ROOT_MODEL_FOLDER = EVAL_FOLDER['mod']
 
@@ -76,7 +76,7 @@ def main(model, load_from_step, original_domains, additional_domains, evaluation
                 "MODEL_TYPE": [MODEL_TYPE],
                 # "GENERALIST_MODEL": ["/checkpoint/suching/margaret_sweep_rerun/small/_EXPERIMENT=dense_NUMSTEPS=36000_LR=0.001/checkpoint_1_30000.pt"],
                 "GENERALIST_MODEL": ["None"],
-                "TOP_K": [8],
+                "TOP_K": [32],
                 "EVAL_FOLDER_ID": [EVAL_FOLDER_ID],
                 "LOAD_FROM_STEP": [load_from_step],
                 "EXCLUDE_EXPERT": ["False"],

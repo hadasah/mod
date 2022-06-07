@@ -76,6 +76,7 @@ def main(model, experiment, domains, data_bin, debug=False, dry_mode=False):
             jobtime='72:00:00',
             mem_gb=480,
             job_id_start=1,
+            volta32=True,
             debug_mode=DEBUG_MODE,
             dry_mode=DRY_MODE,
             add_name='end',

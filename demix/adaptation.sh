@@ -99,7 +99,62 @@ if [[ $OLD_DIR != "None" ]]; then
           NEW_SUBFOLDER_PHRASE="--new-subfolder $RUN_ID ";
      fi;
      if [[ $AVERAGE == "True" ]]; then
-        python $MOD_FOLDER/mod_utils/average.py --output-dir $SERIALIZATION_DIR/$RUN_ID --weights $AVERAGE_WEIGHTS --additional-domains c4 Biology wikipedia gutenberg HTML JavaScript twitter stackexchange Java cord19 stackoverflow C C++ Books Physics Mathematics;
+
+#      prior_results_path=${SERIALIZATION_DIR}/average_eval/${DOMAIN_ID}/dev_posteriors.jsonl;
+#      results_path=${SERIALIZATION_DIR}/average_eval/${DOMAIN_ID}/test_results.txt;
+
+#      mkdir -p ${SERIALIZATION_DIR}/average_eval/${DOMAIN_ID};
+#      cd $MOD_FOLDER;
+#      # echo $results_path;
+#      estimator=;
+#      ROOT_ESTIMATOR_FOLDER='/checkpoint/suching/mod/_modular_gpt3_small_80K/modular_gpt3_small_80K_LR=0.0005/'
+#      for i in $(seq 0 7); do 
+#           estimator=${estimator}:${ROOT_ESTIMATOR_FOLDER}/MODEL=transformerlmgpt3small_DOMAINID=${i}_LOADFROMSTEP=24000_RESETITEMS=dataloader_UPDATEFREQ=32_LR=0.0005/checkpoint_last.pt
+#     done
+#     estimator="${estimator#?}";
+
+#      echo $estimator;
+
+#      echo "estimating probabilities...";
+#      target_eval_split=valid_${DOMAIN_ID};
+#      python -u fairseq_cli/ensemble_eval_lm.py $DATA_PATH \
+#      --path $estimator \
+#      --gen-subset $target_eval_split \
+#      --target-domain train_${DOMAIN_ID} \
+#      --target-eval ${target_eval_split} \
+#      --task multidomain_language_modeling \
+#      --sample-break-mode none \
+#      --tokens-per-sample 1024      \
+#      --batch-size 2  \
+#      --optimizer adafactor \
+#      --sample-break-mode none     \
+#      --log-format simple     \
+#      --log-interval 50     \
+#      --skip-invalid-size-inputs-valid-test               \
+#      --criterion cross_entropy     \
+#      --lr 5e-4        \
+#      --weight-decay 0.1     \
+#      --update-freq 1 \
+#      --clip-norm 0.0     \
+#      --no-save           \
+#      --bucket-cap-mb 200                       \
+#      --ddp-backend no_c10d      \
+#      --arch transformer_lm                 \
+#      --train-domains ${DOMAIN_ID} \
+#      --eval-domains ${DOMAIN_ID} \
+#      --log-format tqdm \
+#      --train-subset train_${DOMAIN_ID} \
+#      --partial-load \
+#      --ensemble-type "updating_prior" \
+#      --results-path ${prior_results_path} \
+#      --max-samples 100;
+#      --distributed-world-size 8;
+#      --distributed-port 12345;
+     # alias jq=~/jq-linux64;
+     prior_results_path=/checkpoint/suching/mod/_modular_gpt3_small_80K/modular_gpt3_small_80K_LR\=0.0005/evals_top8_Base_dense_LOAD_FROM_STEP_24000_LR_0.0005/${DOMAIN_ID}/dev_posteriors.jsonl;
+     precomputed_prior=$(tail -n 1 ${prior_results_path} | jq -rc '.exp_avg_posterior | join(",")');
+     python $MOD_FOLDER/mod_utils/average.py --output-dir $SERIALIZATION_DIR/$RUN_ID --weights $precomputed_prior
+     #    --additional-domains c4 Biology wikipedia gutenberg HTML JavaScript twitter stackexchange Java cord19 stackoverflow C C++ Books Physics Mathematics;
     else
      python $MOD_FOLDER/mod_utils/mod_checkpoint_utils.py \
           --old-folder $OLD_DIR \
