@@ -1,3 +1,4 @@
+
 CONSTANTS = {
     # Margaret's klone account
     "margsli": {
@@ -27,7 +28,7 @@ CONSTANTS = {
         "NUM_CPUS": 10,
         "MEM_GB": 480,
         "MEM_GB_MOD": 48,
-        "JOBTIME": '50:00:00',
+        "JOBTIME": '72:00:00',
     },
     "margaretli": {
         # "DATA_BIN": '/private/home/suching/raw_data/demix_scale/data-bin/',
@@ -42,6 +43,6 @@ CONSTANTS = {
         "NUM_CPUS": 10,
         "MEM_GB": 480,
         "MEM_GB_MOD": 48,
-        "JOBTIME": '50:00:00',
+        "JOBTIME": '72:00:00',
     }
 }

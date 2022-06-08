@@ -50,7 +50,7 @@ valid_subset=valid_${DOMAIN};
 TOKENS_PER_SAMPLE=1024;
 BATCH_SIZE=2;
 LOG_INTERVAL=50;
-KEEP_INTERVAL_UPDATES=1;
+KEEP_INTERVAL_UPDATES=-1;
 
 if [[ $ARCH == *"gpt3_small"* ]]; then
      CLIP_NORM=0.1;
@@ -83,13 +83,15 @@ fi;
 RESET_PHRASE='';
 DISTRIBUTED_ARGS_PHRASE='';
 OIFS=$IFS;
-IFS=','
+IFS=',';
 read -a reset_vals <<< "$RESET_ITEMS";
 IFS=$OIFS;
-
+echo $NUM_GPUS;
 if [ $NUM_GPUS \> 1 ]; then
-     DISTRIBUTED_ARGS_PHRASE="--ddp-backend no_c10d --distributed-world-size $NUM_GPUS --distributed-port $DISTRIBUTED_PORT";
+     DISTRIBUTED_ARGS_PHRASE="--ddp-backend no_c10d --distributed-world-size $NUM_GPUS --distributed-port $((1024 + $RANDOM % 65535))";
 fi;
+echo "distributed args phrase";
+echo $DISTRIBUTED_ARGS_PHRASE;
 
 if [[ $OLD_DIR != "None" ]]; then
      NEW_SUBFOLDER_PHRASE='';
@@ -111,7 +113,6 @@ if [[ $RESET_ITEMS != "None" ]]; then
      done;
 fi;
 echo $RESET_PHRASE;
-
 
 python $MOD_FOLDER/fairseq_cli/train.py  $DATA_PATH \
      --arch $ARCH    \

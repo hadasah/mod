@@ -2,7 +2,7 @@ from slurm_jobs.slurm_job import run_grid
 import os
 import re
 from slurm_jobs.slurm_constants import *
-from slurm_jobs.model_specs import EVAL_FOLDERS
+from slurm_jobs.model_specs import *
 import argparse
 from pathlib import Path
 
@@ -34,6 +34,9 @@ def main(model, domains, data_bin=None, debug=False, dry_mode=False):
         DATA_BIN = RUN_CONSTANTS.get('DATA_BIN')
     JQ_PATH = RUN_CONSTANTS.get('JQ_PATH')
 
+    if not domains:
+        domains = VALID_DOMAINS
+
     # make sure all specified domains exist in data-bin folder
     assert all([Path(DATA_BIN) / x in Path(DATA_BIN).glob("*/") for x in domains])
 
@@ -48,7 +51,7 @@ def main(model, domains, data_bin=None, debug=False, dry_mode=False):
     EVAL_FOLDER_ID = 'Base_dense'
     # Comma separated list of the checkpoint IDs. 
     #Unfortunately this can't be set per job, I'm assuming we're always setting the right # updates
-    CHECKPOINT_ID = 'best'
+    CHECKPOINT_ID = 'last'
 
     EVAL_SCRIPT = f'{MOD_FOLDER}/demix/mix_eval_pipeline.sh' if MODEL_TYPE in ['demix', 'modular'] else f'{MOD_FOLDER}/demix/eval_pipeline.sh'
     # all_runs = os.listdir(MODEL_FOLDER)
@@ -61,7 +64,7 @@ def main(model, domains, data_bin=None, debug=False, dry_mode=False):
             'positional_args': {
                 "DATA_BIN": [DATA_BIN],
                 "ROOT_MODEL_FOLDER": [MODEL_FOLDER],
-                "MODEL_FOLDERS": '.',
+                "MODEL_FOLDERS": ['.'],
                 "CHECKPOINT_ID": [CHECKPOINT_ID],
                 "SPLIT": ['test'],
                 "DOMAIN_ID": domains,

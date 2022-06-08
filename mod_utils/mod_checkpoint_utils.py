@@ -60,8 +60,12 @@ def main(CHECKPOINTS_TOP_FOLDER, NEW_MODEL_TOP_FOLDER, subfolder, new_subfolder,
     if load_from_step == -1:
         src_checkpoint_update_id = f"checkpoint_last"
     else:
-        src_checkpoint_update_id = f"checkpoint_1_{load_from_step}"
-    # print('src_checkpoint_update_id', src_checkpoint_update_id)
+        update_nums = [int(f.split("_")[2]) for f in checkpoint_update_ids]
+        src_update_num = load_from_step
+        sort_factor = 1
+        zipped_name_and_num = [(a, b) for (a, b) in zip(update_nums, checkpoint_update_ids)]
+        zipped_name_and_num.sort(key=lambda i: sort_factor * i[0])
+        src_checkpoint_update_id = zipped_name_and_num[min(range(len(zipped_name_and_num)), key=lambda i: abs(zipped_name_and_num[i][0]-src_update_num))][1]
     if 'checkpoint_last.pt' in files: #dense
         # for domain_id in range(8):
         new_domain_folder_path = os.path.join(NEW_MODEL_TOP_FOLDER, new_subfolder)
@@ -70,7 +74,8 @@ def main(CHECKPOINTS_TOP_FOLDER, NEW_MODEL_TOP_FOLDER, subfolder, new_subfolder,
         print('src_filename', src_filename)
         os.makedirs(new_domain_folder_path, exist_ok=True)
         filename = os.path.join(new_domain_folder_path, 'checkpoint_last.pt')
-        shutil.copyfile(src_filename, filename)
+        if not os.path.exists(filename):
+            shutil.copyfile(src_filename, filename)
     elif 'checkpoint_last-shared.pt' in files: #demix
         # for domain_id in range(8):
         new_domain_folder_path = os.path.join(NEW_MODEL_TOP_FOLDER, new_subfolder)
@@ -84,8 +89,9 @@ def main(CHECKPOINTS_TOP_FOLDER, NEW_MODEL_TOP_FOLDER, subfolder, new_subfolder,
             shared_state = torch.load(f, map_location=torch.device("cpu"))
         state = merge_expert_and_shared_state(expert_state, shared_state)
         filename = os.path.join(new_domain_folder_path, 'checkpoint_last.pt')
-        with open(filename, 'wb') as f:
-            torch.save(state, filename)
+        if not os.path.exists(filename):
+            with open(filename, 'wb') as f:
+                torch.save(state, filename)
 
 
 if __name__=='__main__':

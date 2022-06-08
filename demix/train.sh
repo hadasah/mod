@@ -30,9 +30,14 @@ WANDB_PROJECT=${12}
 WANDB_ENTITY=${13}
 # MOD code folder
 MOD_FOLDER=${14}
+DOMAIN_ID=${15}
 # identifier of this run in the sweep
-ID=${15}
+ID=${16}
 
+
+export WANDB_NAME=$SWEEP_NAME/$RUN_ID;
+
+IDS_TO_DOMAINS=('1b' 'anonymized_openwebtext' 'anonymized_realnews' 'anonymized_reviews' 'cs' 'legal' 'med' 'reddit');
 
 # list of domains you'd like to train on, that can be found in $DATA_PATH
 domains=1b,cs,legal,med,anonymized_openwebtext,anonymized_realnews,reddit,anonymized_reviews;
@@ -40,10 +45,74 @@ domains=1b,cs,legal,med,anonymized_openwebtext,anonymized_realnews,reddit,anonym
 valid_subset=valid_1b,valid_cs,valid_legal,valid_med,valid_anonymized_openwebtext,valid_anonymized_realnews,valid_reddit,valid_anonymized_reviews;
 # name of wandb project to track model output (at wandb.ai)
 
+DATA_PHRASE="";
+OIFS=$IFS;
+IFS=','
+read -a domain_ids <<< "$DOMAIN_ID";
+IFS=$OIFS;
+# if [[ ${#domain_ids[@]} > 1 ]]; then
+#      domains="";
+#      valid_subset="";
+#      for id in "${domain_ids[@]}"; do
+#           domains="${domains},${IDS_TO_DOMAINS[$id]}"
+#           valid_subset="${valid_domains},valid_${IDS_TO_DOMAINS[$id]}"
+#      done;
+     
+#      DATA_PHRASE="$DATA_PATH \
+#           --task multidomain_language_modeling 
+#           --valid-subset ${valid_domains#?} \
+#           --train-domains ${domains#?}  \
+#           --eval-domains ${domains#?} \
+#           --criterion desynchronized_cross_entropy     \
+#           "
+# else
+#      id=${domain_ids[0]}
+#      DATA_PHRASE="${DATA_PATH}/${IDS_TO_DOMAINS[$id]} \
+#           --task language_modeling \
+#           --criterion cross_entropy     \
+#           ";
+# fi;
+
+if [[ ${#domain_ids[@]} > 1 ]]; then
+     domains="";
+     valid_domains="";
+     for id in "${domain_ids[@]}"; do
+          domains="${domains},$id"
+          valid_domains="${valid_domains},valid_$id"
+     done;
+     
+     DATA_PHRASE="$DATA_PATH \
+          --task multidomain_language_modeling 
+          --valid-subset ${valid_domains#?} \
+          --train-domains ${domains#?}  \
+          --eval-domains ${domains#?} \
+          --criterion desynchronized_cross_entropy     \
+          "
+else
+     domains="";
+     valid_domains="";
+     for id in "${domain_ids[@]}"; do
+          domains="${domains},$id"
+          valid_domains="${valid_domains},valid_$id"
+     done;
+     
+     DATA_PHRASE="$DATA_PATH \
+          --task multidomain_language_modeling 
+          --valid-subset ${valid_domains#?} \
+          --train-domains ${domains#?}  \
+          --eval-domains ${domains#?} \
+          --criterion cross_entropy     \
+          --unbalanced  \
+          "
+
+fi;
+echo $DATA_PHRASE;
+
+
 TOKENS_PER_SAMPLE=1024;
 BATCH_SIZE=2;
 LOG_INTERVAL=50;
-KEEP_INTERVAL_UPDATES=5;
+KEEP_INTERVAL_UPDATES=-1;
 
 if [[ $ARCH == *"gpt3_small"* ]]; then
      CLIP_NORM=0.1;
@@ -119,8 +188,7 @@ SERIALIZATION_DIR=${MODEL_DIR}/${ID}
 
 
 if [[ $EXPERIMENT == *"demix"* ]]; then
-     python $MOD_FOLDER/fairseq_cli/train.py $DATA_PATH \
-          --task multidomain_language_modeling \
+     python $MOD_FOLDER/fairseq_cli/train.py $DATA_PHRASE \
           --sample-break-mode none \
           --log-format simple  \
           --log-interval $LOG_INTERVAL    \
@@ -129,7 +197,6 @@ if [[ $EXPERIMENT == *"demix"* ]]; then
           --save-interval-updates $SAVE_INTERVAL_UPDATES     \
           --keep-interval-updates $KEEP_INTERVAL_UPDATES    \
           --arch $ARCH    \
-	     --criterion desynchronized_cross_entropy     \
           --lr-scheduler polynomial_decay     \
           --num-workers 2 \
           --max-sentences $BATCH_SIZE \
@@ -150,9 +217,6 @@ if [[ $EXPERIMENT == *"demix"* ]]; then
           --batch-size-valid 2                        \
           --wandb-project $WANDB_PROJECT           \
           --wandb-entity $WANDB_ENTITY \
-          --valid-subset $valid_subset \
-          --train-domains $domains  \
-          --eval-domains $domains \
           --required-batch-size-multiple 1 \
           --fp16 \
           --distributed-world-size $NUM_GPUS \
@@ -163,12 +227,11 @@ if [[ $EXPERIMENT == *"demix"* ]]; then
           --untie-parameters feedforward \
           --data-parallel-groups "${DATA_PARALLEL_GROUPS}" \
           --all-gather-list-size 32000 \
-	  --stop-time-hours $STOP_TIME_HOURS \
+	     --stop-time-hours $STOP_TIME_HOURS \
           $RESET_DATALOADER_PHRASE \
           --pad-to-fixed-length;
 elif [[ $EXPERIMENT == *"unbalanced"* ]]; then
-     python $MOD_FOLDER/fairseq_cli/train.py     $DATA_PATH \
-          --task multidomain_language_modeling \
+     python $MOD_FOLDER/fairseq_cli/train.py    $DATA_PHRASE \
           --sample-break-mode none \
           --log-format simple  \
           --log-interval $LOG_INTERVAL    \
@@ -177,7 +240,6 @@ elif [[ $EXPERIMENT == *"unbalanced"* ]]; then
           --save-interval-updates $SAVE_INTERVAL_UPDATES     \
           --keep-interval-updates $KEEP_INTERVAL_UPDATES    \
           --arch $ARCH    \
-          --criterion desynchronized_cross_entropy     \
           --lr-scheduler polynomial_decay     \
           --num-workers 2 \
           --max-sentences $BATCH_SIZE \
@@ -197,21 +259,17 @@ elif [[ $EXPERIMENT == *"unbalanced"* ]]; then
           --save-dir ${SERIALIZATION_DIR}     \
           --batch-size-valid 2                        \
           --wandb-project $WANDB_PROJECT           \
-          --valid-subset $valid_subset \
-          --train-domains $domains  \
-          --eval-domains $domains \
           --required-batch-size-multiple 1 \
           --fp16 \
           --distributed-world-size $NUM_GPUS \
           --distributed-port $PORT \
           --all-gather-list-size 32000 \
           --ddp-backend no_c10d \
-	  --stop-time-hours $STOP_TIME_HOURS \
+	     --stop-time-hours $STOP_TIME_HOURS \
           $RESET_DATALOADER_PHRASE \
           --unbalanced;
 elif [[ $EXPERIMENT == *"dense"* ]]; then
-     python $MOD_FOLDER/fairseq_cli/train.py     $DATA_PATH \
-          --task multidomain_language_modeling \
+     python $MOD_FOLDER/fairseq_cli/train.py    $DATA_PHRASE \
           --sample-break-mode none \
           --log-format simple  \
           --log-interval $LOG_INTERVAL    \
@@ -220,7 +278,6 @@ elif [[ $EXPERIMENT == *"dense"* ]]; then
           --save-interval-updates $SAVE_INTERVAL_UPDATES     \
           --keep-interval-updates $KEEP_INTERVAL_UPDATES    \
           --arch $ARCH    \
-          --criterion desynchronized_cross_entropy     \
           --lr-scheduler polynomial_decay     \
           --num-workers 2 \
           --max-sentences $BATCH_SIZE \
@@ -240,9 +297,6 @@ elif [[ $EXPERIMENT == *"dense"* ]]; then
           --save-dir ${SERIALIZATION_DIR}     \
           --batch-size-valid 2                        \
           --wandb-project $WANDB_PROJECT           \
-          --valid-subset $valid_subset \
-          --train-domains $domains  \
-          --eval-domains $domains \
           --required-batch-size-multiple 1 \
           --fp16 \
           --distributed-world-size $NUM_GPUS \
@@ -252,7 +306,7 @@ elif [[ $EXPERIMENT == *"dense"* ]]; then
           $RESET_DATALOADER_PHRASE \
           --all-gather-list-size 32000;
 elif [[ $EXPERIMENT == *"switch"* ]]; then
-     python $MOD_FOLDER/fairseq_cli/train.py $DATA_PATH     \
+     python $MOD_FOLDER/fairseq_cli/train.py $DATA_PHRASE \
           --task multidomain_language_modeling     \
           --sample-break-mode none     \
           --log-format simple     \
@@ -298,11 +352,11 @@ elif [[ $EXPERIMENT == *"switch"* ]]; then
           --distributed-world-size $NUM_GPUS \
           --distributed-port $PORT \
           --ddp-backend no_c10d \
-	  --stop-time-hours $STOP_TIME_HOURS \
+	     --stop-time-hours $STOP_TIME_HOURS \
           $RESET_DATALOADER_PHRASE \
           --all-gather-list-size 32000;
 elif [[ $EXPERIMENT == *"gshard"* ]]; then
-     python $MOD_FOLDER/fairseq_cli/train.py $DATA_PATH     \
+     python $MOD_FOLDER/fairseq_cli/train.py $DATA_PHRASE \
           --task multidomain_language_modeling     \
           --sample-break-mode none     \
           --log-format simple     \
@@ -331,9 +385,6 @@ elif [[ $EXPERIMENT == *"gshard"* ]]; then
           --wandb-project $WANDB_PROJECT \
           --save-dir ${SERIALIZATION_DIR}         \
           --batch-size-valid 2                        \
-          --train-domains $domains \
-          --eval-domains $domains \
-          --valid-subset $valid_subset \
           --required-batch-size-multiple 1 \
           --update-freq $UPDATE_FREQ \
           --fp16 \
@@ -346,13 +397,13 @@ elif [[ $EXPERIMENT == *"gshard"* ]]; then
           --moe-second-expert-policy all \
           --distributed-world-size $NUM_GPUS \
           --distributed-port $PORT \
-	  --stop-time-hours $STOP_TIME_HOURS \
+	     --stop-time-hours $STOP_TIME_HOURS \
           --ddp-backend no_c10d \
           $RESET_DATALOADER_PHRASE \
           --all-gather-list-size 32000;
 elif [[ $EXPERIMENT == *"domain_token"* ]]; then
      # domain token
-     python $MOD_FOLDER/fairseq_cli/train.py     $DATA_PATH \
+     python $MOD_FOLDER/fairseq_cli/train.py   $DATA_PHRASE \
           --task multidomain_language_modeling \
           --sample-break-mode none \
           --log-format simple  \
@@ -362,7 +413,6 @@ elif [[ $EXPERIMENT == *"domain_token"* ]]; then
           --save-interval-updates $SAVE_INTERVAL_UPDATES     \
           --keep-interval-updates $KEEP_INTERVAL_UPDATES    \
           --arch $ARCH    \
-	     --criterion desynchronized_cross_entropy     \
           --lr-scheduler polynomial_decay     \
           --num-workers 2 \
           --max-sentences $BATCH_SIZE \
@@ -382,16 +432,13 @@ elif [[ $EXPERIMENT == *"domain_token"* ]]; then
           --save-dir ${SERIALIZATION_DIR}     \
           --batch-size-valid 2                        \
           --wandb-project $WANDB_PROJECT           \
-          --valid-subset $valid_subset \
-          --train-domains $domains  \
-          --eval-domains $domains \
           --required-batch-size-multiple 1 \
           --fp16 \
           --distributed-world-size $NUM_GPUS \
           --distributed-port $PORT \
           --all-gather-list-size 32000 \
           --ddp-backend no_c10d \
-	  --stop-time-hours $STOP_TIME_HOURS \
+	     --stop-time-hours $STOP_TIME_HOURS \
           $RESET_DATALOADER_PHRASE \
           --add-domain-token;
 fi;

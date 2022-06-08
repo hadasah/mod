@@ -6,7 +6,7 @@ import argparse
 from slurm_jobs.model_specs import EVAL_FOLDERS
 from pathlib import Path
 
-def main(model, load_from_step, domains, data_bin=None, debug=False, dry_mode=False):
+def main(model, load_from_step, domains, data_bin=None, debug=False, dry_mode=False, init_id=None):
     username = os.getlogin()
     if username not in CONSTANTS:
         raise Error("username isn't defined in slurm_constants file")
@@ -23,45 +23,33 @@ def main(model, load_from_step, domains, data_bin=None, debug=False, dry_mode=Fa
     name_keys = []
     NUM_GPUS = 8
 
+    if not domains:
+        DOMAINS = [i for i in range(16)]
+    else:
+        DOMAINS = domains
     # make sure all specified domains exist in data-bin folder
-    assert all([Path(DATA_BIN) / x in Path(DATA_BIN).glob("*/") for x in domains])
+    # assert all([Path(DATA_BIN) / x in Path(DATA_BIN).glob("*/") for x in DOMAINS])
 
-    # /checkpoint/suching/suchin_mod_8_GPUs/small/_EXPERIMENT=dense_NUMSTEPS=36000_LR=0.001/_DOMAIN_5_MOD_STEPS_30000_PHASE1_DENSE
-    # /checkpoint/suching/mod_sweep/_modular_gpt3_small_36K/modular_gpt3_small_36K_LR=0.001/MODEL=transformerlmgpt3small_DOMAINID=7_PHASEONERATIO=0.25_RESETITEMS=dataloader,meters_UPDATEFREQ=32_LR=0.001
-
-    # MODEL=transformerlmgpt3small_DOMAINID=7_PHASEONERATIO=0.25_RESETITEMS=dataloader,meters_UPDATEFREQ=32_LR=0.001
-
-    # This regex looks in MODEL_FOLDER's subfolders for matches
-    WANTED_FOLDER_REGEX = '.*'
     # Used to distinguish between my naming conventions for demix vs modular models
     MODEL_TYPE = 'mod'
-    # Determines where the posteriors and results gets saved 
-    EVAL_FOLDER_ID = f'Base_dense_LOAD_FROM_STEP_{load_from_step}_LR_0.0005'
+    # Determines where the posteriors and results gets saved
+
+    DOMAIN_PHRASE = f'_INIT={init_id}' if init_id else ''
+    EVAL_FOLDER_ID = f'Base_dense_LOAD_FROM_STEP_{load_from_step}_LR_0.0005{DOMAIN_PHRASE}'
     # Comma separated list of the checkpoint IDs. 
     #Unfortunately this can't be set per job, I'm assuming we're always setting the right # updates
     CHECKPOINT_IDS = 'last,last,last,last,last,last,last,last'
     # CHECKPOINT_IDS = 'best,best,best,best,best,best,best,best'
 
     EVAL_SCRIPT = f'{MOD_FOLDER}/demix/mix_eval_pipeline.sh' if MODEL_TYPE in ['demix', 'mod'] else f'{MOD_FOLDER}/demix/eval_pipeline.sh'
-    # all_runs = os.listdir("/checkpoint/suching/mod/_modular_transformer_lm_gpt3_medium/modular_transformer_lm_gpt3_medium_LR=0.0005/")
-    # regex = re.compile(WANTED_FOLDER_REGEX)
-    # selected_folders = [folder for folder in all_runs if regex.match(folder)]
-    # print(selected_folders)
-
     MODEL=model
     SWEEP_NAME = f"eval_sweep_{MODEL}_mod_LOAD_FROM_STEP_{load_from_step}"
     EVAL_FOLDER = EVAL_FOLDERS[MODEL]
     ROOT_MODEL_FOLDER = EVAL_FOLDER[MODEL_TYPE]
+    if MODEL_TYPE == 'mod':
+        ROOT_MODEL_FOLDER = ROOT_MODEL_FOLDER.format(DOMAIN_PHRASE)
+        print(ROOT_MODEL_FOLDER)
 
-    if not domains:
-        DOMAINS = [i for i in range(16)]
-    else:
-        DOMAINS = domains
-
-    # if model == 'transformer_lm_gpt3_small':
-    #     ROOT_MODEL_FOLDER = "/checkpoint/suching/mod/_modular_gpt3_small_80K/modular_gpt3_small_80K_LR=0.0005/"
-    # elif model == 'transformer_lm_gpt3_medium':
-    #     ROOT_MODEL_FOLDER = "/checkpoint/suching/mod/_modular_transformer_lm_gpt3_medium/modular_transformer_lm_gpt3_medium_LR=0.0005/"
     grids = {
         SWEEP_NAME: {
             'fixed_args': '',
@@ -103,15 +91,16 @@ def main(model, load_from_step, domains, data_bin=None, debug=False, dry_mode=Fa
             nodes=1,
             #TODO change these
             account=RUN_CONSTANTS.get('SLURM_ACCOUNT'),
-            partition=RUN_CONSTANTS.get('SLURM_PARTITION'),
-            jobtime='2:00:00',
+            # partition=RUN_CONSTANTS.get('SLURM_PARTITION'),
+            partition="scavenge",
+            jobtime='3:00:00',
             mem_gb=480,
             job_id_start=1,
             debug_mode=DEBUG_MODE,
             dry_mode=DRY_MODE,
             DIR_PATH=MOD_FOLDER,
             #TODO change this
-            conda_env_name='latest',
+            conda_env_name=RUN_CONSTANTS['CONDA_ENV'],
         )
 
 if __name__ == '__main__':
@@ -122,5 +111,6 @@ if __name__ == '__main__':
     parser.add_argument('--domains', type=str, nargs="+")
     parser.add_argument('--load-from-step', type=int)
     parser.add_argument('--data-bin', type=str)
+    parser.add_argument('--init-id', type=str)
     args = parser.parse_args()
-    main(args.model,  args.load_from_step, args.domains, args.data_bin, args.debug, args.dry_mode)
+    main(args.model,  args.load_from_step, args.domains, args.data_bin, args.debug, args.dry_mode, args.init_id)

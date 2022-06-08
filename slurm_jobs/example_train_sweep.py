@@ -5,7 +5,7 @@ import os
 import numpy as np
 
 
-def main(model, experiment, debug=False, dry_mode=False):
+def main(model, experiment, debug=False, dry_mode=False, domains=None):
     DEBUG_MODE = debug
     DRY_MODE = dry_mode
     MODEL = model
@@ -20,7 +20,22 @@ def main(model, experiment, debug=False, dry_mode=False):
     NUM_NODES = SPECS['NUM_GPUS'] // 8
     SWEEP_NAME = f"sweep_{MODEL}_{SPECS['NUM_GPUS']}_GPUs"
     
+
     name_keys = ["EXPERIMENT", "NUM_STEPS", "UPDATE_FREQ", "LR", "NUM_GPUS"]
+    secondary_domains = ['wikipedia', 'c4', 'books', 'tumblr', 'code_contests', 'explainlikeimfive', 'memes', 'dc_text_20200604']
+    
+    #rename
+    if domains is None:
+        # domains = ["0,1,2,3,4,5,6,7,8"]
+        domains = secondary_domains
+    else:
+        name_keys.append("DOMAIN_IDS")
+    
+    if domains[0] in secondary_domains:
+        DATA_BIN = RUN_CONSTANTS.get("SECOND_DATA_BIN")
+        DATA_BIN = '/private/home/suching/raw_data/demix_scale/data-bin/'
+    else:
+        DATA_BIN = RUN_CONSTANTS.get('DATA_BIN')
 
     grids = {
         SWEEP_NAME: {
@@ -31,7 +46,7 @@ def main(model, experiment, debug=False, dry_mode=False):
                 "MODEL": [MODEL],
                 "EXPERIMENT": [experiment],
                 "MODEL_DIR": [RUN_CONSTANTS.get('MODEL_FOLDER')],
-                "DATA_BIN": [RUN_CONSTANTS.get('DATA_BIN')],
+                "DATA_BIN": [DATA_BIN],
                 "NUM_STEPS": [SPECS['NUM_STEPS']],
                 "SAVE_INTERVAL_UPDATES": [SPECS['SAVE_INTERVAL_UPDATES']],
                 "STOP_TIME_HOURS": [SPECS['TRAIN_HOURS']],
@@ -40,6 +55,7 @@ def main(model, experiment, debug=False, dry_mode=False):
                 "WANDB_PROJECT": ['publication-test'],
                 "WANDB_ENTITY": ['scaling-demix'],
                 "MOD_FOLDER": [MOD_FOLDER],
+                "DOMAIN_IDS": domains,
             },
             'named_args': {},
         },
@@ -58,7 +74,7 @@ def main(model, experiment, debug=False, dry_mode=False):
             #TODO change these
             account=RUN_CONSTANTS['SLURM_ACCOUNT'],
             partition=RUN_CONSTANTS['SLURM_PARTITION'],
-            jobtime='54:00:00',
+            jobtime='72:00:00',
             mem_gb=480,
             job_id_start=1,
             debug_mode=DEBUG_MODE,
@@ -73,5 +89,6 @@ if __name__ == '__main__':
     parser.add_argument('--dry-mode', action='store_true')
     parser.add_argument('--model', type=str)
     parser.add_argument('--experiment', type=str)
+    parser.add_argument('--domains', type=str, nargs="+")
     args = parser.parse_args()
-    main(args.model, args.experiment, args.debug, args.dry_mode)
+    main(args.model, args.experiment, args.debug, args.dry_mode, args.domains)
