@@ -5,10 +5,12 @@ data_path=$2
 
 ROOT_MODEL_FOLDER=$3
 
-MODEL_FOLDER=$4
+SUBFOLDERS=$4
 
 CHECKPOINT_IDS=$5
-
+# echo $ROOT_MODEL_FOLDER;
+# echo $SUBFOLDERS;
+# echo $CHECKPOINT_IDS;
 # target domain to evaluate on
 target_domain_ID=$6
 # Ensemble type, one of "simple_average","cached_prior", "updating_prior", "uniform_prior"
@@ -34,62 +36,61 @@ jq_path=${16}
 
 echo $model_type
 OIFS=$IFS;
-IFS=','
+IFS=':'
 read -a model_checkpoint_ids <<< "$CHECKPOINT_IDS";
+read -a subfolders <<< "$SUBFOLDERS";
 IFS=$OIFS;
 
 IDS_TO_DOMAINS=('1b' 'anonymized_openwebtext' 'anonymized_realnews' 'anonymized_reviews' 'cs' 'legal' 'med' 'reddit' 'anonymized_latest_news_redo' 'anonymized_tweets_redo' 'anonymized_yelp_reviews_redo' 'cord19-redo' 'github_redo' 'gutenberg' 'legal_contracts' 'qasper');
 
 target_domain=${IDS_TO_DOMAINS[$target_domain_ID]}
 
-model=;
+# model=;
 
-if [[ "$model_type" == "demix" ]]; then
-    for i in $(seq 0 2 15); do
-        if ([[ "$exclude_expert" != "True" ]] || [[ "$i" != "$target_domain_ID" ]]) && ([[ "$only_use_expert" != "True" ]] || [[ "$i" == "$target_domain_ID" ]]) && [[ "${model_checkpoint_ids[$i]}" != "None" ]]; then
-            model=${model}:${ROOT_MODEL_FOLDER}/${MODEL_FOLDER}/checkpoint_best-rank-${i}.pt; 
-        fi;
-    done
-elif [[ "$model_type" == "modular" ]]; then
-    if [[ "$generalist_model" != "None" ]]; then
-	start=1;
-    else start=0;
-    fi
-    for i in $(seq $start 7); do 
-        if ([[ "$exclude_expert" != "True" ]] || [[ "$i" != "$target_domain_ID" ]])  && ([[ "$only_use_expert" != "True" ]] || [[ "$i" == "$target_domain_ID" ]]) && [[ "${model_checkpoint_ids[$i]}" != "None" ]]; then
-            # /checkpoint/suching/suchin_mod/small/_EXPERIMENT\=dense_NUMSTEPS\=36000_LR\=0.001/_DOMAIN_3_MOD_STEPS_30000_PHASE1_DENSE
-            #model=${model}:${ROOT_MODEL_FOLDER}/${MODEL_FOLDER}/_DOMAIN_${i}_MOD_STEPS_${num_steps}_PHASE1_DENSE/checkpoint_last.pt
-            # model=${model}:${ROOT_MODEL_FOLDER}/${MODEL_FOLDER}/DOMAIN_${i}/${num_steps}/checkpoint_${model_checkpoint_ids[$i]}-rank-${i}.pt
-#/checkpoint/suching/suchin_mod//small//_EXPERIMENT=demix_mod_NUMSTEPS=36000_LR=0.001/DOMAIN_3/6000/
-            # model=${model}:${ROOT_MODEL_FOLDER}/${MODEL_FOLDER}/DOMAIN_${i}/$num_steps/checkpoint_last-rank-0.pt
-            model=${model}:${ROOT_MODEL_FOLDER}/MODEL=transformerlmgpt3small_DOMAINID=${i}_LOADFROMSTEP=${num_steps}_RESETITEMS=dataloader_UPDATEFREQ=32_LR=0.0005/checkpoint_${model_checkpoint_ids[$i]}.pt;
-            # /checkpoint/suching/mod_publication/mod/small/PHASE1_16GPU_MOD_2GPU_DOMAIN_7_MOD_STEPS_72000_PHASE1_DENSE
-            # if [[ $i == 7 ]]; then
-                # model=${model}:${ROOT_MODEL_FOLDER}/${MODEL_FOLDER}/MOD_2_GPU_DOMAIN_1_MOD_STEPS_FROM_SCRATCH/checkpoint_${model_checkpoint_ids[$i]}.pt;
-            # else 
-            # model=${model}:${ROOT_MODEL_FOLDER}/${MODEL_FOLDER}/MOD_2_GPU_DOMAIN_${i}_MOD_STEPS_FROM_SCRATCH/checkpoint_${model_checkpoint_ids[$i]}.pt;
-            # fi;
-            # model=${model}:${ROOT_MODEL_FOLDER}/${MODEL_FOLDER}/PHASE1_16GPU_MOD_2GPU_DOMAIN_${i}_MOD_STEPS_${num_steps}_PHASE1_DENSE/checkpoint_${model_checkpoint_ids[$i]}.pt;
-        fi;    
-    done
-fi;
-model="${model#?}";
+# if [[ "$model_type" == "demix" ]]; then
+#     for i in $(seq 0 2 15); do
+#         if ([[ "$exclude_expert" != "True" ]] || [[ "$i" != "$target_domain_ID" ]]) && ([[ "$only_use_expert" != "True" ]] || [[ "$i" == "$target_domain_ID" ]]) && [[ "${model_checkpoint_ids[$i]}" != "None" ]]; then
+#             model=${model}:${ROOT_MODEL_FOLDER}/${MODEL_FOLDER}/checkpoint_best-rank-${i}.pt; 
+#         fi;
+#     done
+# elif [[ "$model_type" == "modular" ]]; then
+#     for i in $(seq 0 7); do 
+#         if ([[ "$exclude_expert" != "True" ]] || [[ "$i" != "$target_domain_ID" ]])  && ([[ "$only_use_expert" != "True" ]] || [[ "$i" == "$target_domain_ID" ]]) && [[ "${model_checkpoint_ids[$i]}" != "None" ]]; then
+#             model=${model}:${ROOT_MODEL_FOLDER}/MODEL=transformerlmgpt3small_DOMAINID=${i}_LOADFROMSTEP=${num_steps}_RESETITEMS=dataloader_UPDATEFREQ=32_LR=0.0005/checkpoint_${model_checkpoint_ids[$i]}.pt;
+#             # model=${model}:${ROOT_MODEL_FOLDER}/${subfolders[$i]}/checkpoint_${model_checkpoint_ids[$i]}.pt
+#         fi;    
+#     done
+# fi;
+# model="${model#?}";
 
-evals_folder=evals_top${eval_top_k};
-if [[ "$generalist_model" != "None" ]]; then
-    model=${model}:$generalist_model;
-    evals_folder=generalist_evals_top${eval_top_k};
-fi;
-evals_folder=${evals_folder}_${id};
+# evals_folder=evals_top${eval_top_k};
+# evals_folder=${evals_folder}_${id};
+# results_folder=${ROOT_MODEL_FOLDER}/${evals_folder}/${target_domain}/
 
-prior_results_path=${ROOT_MODEL_FOLDER}/${evals_folder}/${target_domain}/dev_posteriors.jsonl;
-results_path=${ROOT_MODEL_FOLDER}/${evals_folder}/${target_domain}/test_results.txt;
+# prior_results_path=${ROOT_MODEL_FOLDER}/${evals_folder}/${target_domain}/dev_posteriors.jsonl;
+# results_path=${ROOT_MODEL_FOLDER}/${evals_folder}/${target_domain}/test_results.txt;
 
-mkdir -p ${ROOT_MODEL_FOLDER}/${evals_folder}/${target_domain};
+# mkdir -p ${ROOT_MODEL_FOLDER}/${evals_folder}/${target_domain};
 cd $MOD_FOLDER;
-# echo $results_path;
+
+REGEX_NAME_STR=$SUBFOLDERS;
+OIFS=$IFS;
+IFS=' ';
+read -r results_folder model < <(python -u mod_utils/mix_eval_utils.py \
+--regex-name-str ${REGEX_NAME_STR} \
+--model-folder ${ROOT_MODEL_FOLDER} \
+--exclude-expert ${exclude_expert} \
+--only-use-expert ${only_use_expert} \
+--generalist-model ${generalist_model} \
+--model-type ${model_type} \
+--checkpoint-ids ${CHECKPOINT_IDS} \
+--target-domain-id ${target_domain_ID});
+IFS=$OIFS;
+echo $results_folder;
 echo $model;
-# echo $MOD_FOLDER;
+mkdir -p ${results_folder}
+prior_results_path=${results_folder}/dev_posteriors.jsonl;
+results_path=${results_folder}/test_results.txt;
 
 echo "estimating probabilities...";
 target_eval_split=valid_${target_domain};
@@ -141,16 +142,10 @@ target_eval_split=test_${target_domain};
 --sample-break-mode none \
 --tokens-per-sample 1024      \
 --batch-size 2  \
---optimizer adafactor \
 --sample-break-mode none     \
 --log-format simple     \
 --log-interval 50     \
 --skip-invalid-size-inputs-valid-test               \
---criterion cross_entropy     \
---lr 5e-4        \
---weight-decay 0.1     \
---update-freq 1 \
---clip-norm 0.0     \
 --no-save           \
 --bucket-cap-mb 200                       \
 --ddp-backend no_c10d      \
@@ -166,3 +161,10 @@ target_eval_split=test_${target_domain};
 --eval-topk ${eval_top_k} \
 --distributed-world-size $num_gpus \
 --distributed-port 12345 ;
+
+# --criterion cross_entropy     \
+# --lr 5e-4        \
+# --weight-decay 0.1     \
+# --update-freq 1 \
+# --clip-norm 0.0     \
+# --optimizer adafactor \

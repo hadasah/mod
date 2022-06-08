@@ -5,7 +5,6 @@ import fairseq
 import os
 import argparse
 
-
 def main(model, debug=False, dry_mode=False, from_scratch=False, domains=None, load_from_step=0, jobtime='50:00:00'):
     DEBUG_MODE = debug
     DRY_MODE = dry_mode
@@ -17,17 +16,13 @@ def main(model, debug=False, dry_mode=False, from_scratch=False, domains=None, l
     RUN_CONSTANTS = CONSTANTS.get(username)
     MOD_FOLDER = RUN_CONSTANTS.get('MOD_FOLDER')
 
-    
     SWEEP_NAME = f"sweep_{MODEL}_mod"
-
 
     name_keys = ["MODEL",  "LOAD_FROM_STEP", "RESET_ITEMS", "LR", "UPDATE_FREQ", "DOMAIN_ID"]
     from slurm_jobs.model_specs import SPECS
     SPECS = SPECS[MODEL]
     NUM_GPUS = SPECS['NUM_MOD_GPUS']
-
     NUM_NODES = 1 if NUM_GPUS < 8 else NUM_GPUS // 8
-
 
     if FROM_SCRATCH:
         PATH_TO_DENSE_CHECKPOINTS = "None"
@@ -60,7 +55,8 @@ def main(model, debug=False, dry_mode=False, from_scratch=False, domains=None, l
                 "COPYING_MODEL_FOLDER": [PATH_TO_DENSE_CHECKPOINTS],
                 "NEW_MODEL_TOP_FOLDER": [NEW_MODEL_TOP_FOLDER],
                 "CHECKPOINTS_SUBFOLDER": FOLDERS,
-                "LOAD_FROM_STEP": [load_from_step],
+                "PHASE_ONE_RATIO": ["None"],
+                "PHASE_ONE_UPDATE_NUM": [load_from_step],
                 "RESET_ITEMS": ['dataloader'],
                 "NUM_STEPS": [SPECS['NUM_STEPS']],
                 "UPDATE_FREQ": [SPECS['UF']],

@@ -267,6 +267,12 @@ def main(cfg: FairseqConfig) -> None:
             cfg.dataset.batch_size,
         )
     )
+    # reset the checkpoint suffix again after setting the process groups (e.g. for demix)
+    print('cfg.checkpoint.checkpoint_suffix', cfg.checkpoint.checkpoint_suffix)
+    if getattr(cfg.model, "desynchronize", False) or getattr(cfg.model, "moe_freq", 0) > 0 and getattr(cfg.model, "moe_expert_count", 0) > 0:
+        cfg.checkpoint.checkpoint_suffix = f"-rank-{cfg.distributed_training.distributed_rank}"
+        print('cfg.checkpoint.checkpoint_suffix', cfg.checkpoint.checkpoint_suffix)
+
 
     # Load the latest checkpoint if one is available and restore the
     # corresponding train iterator

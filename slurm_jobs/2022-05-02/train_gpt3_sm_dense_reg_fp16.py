@@ -8,10 +8,10 @@ if RUN_CONSTANTS is None:
     raise Error("username isn't defined in slurm_constants file")
 MOD_FOLDER = RUN_CONSTANTS.get('MOD_FOLDER')
 
-SWEEP_NAME = "dense_gpt3_med"
+SWEEP_NAME = "new_reg_fp16_gpt3_small"
 DEBUG_MODE = False
 DRY_MODE = False
-name_keys = []
+name_keys = ["EXPERIMENT", "MODEL", "LR", "NUM_STEPS"]
 NUM_GPUS = 8
 
 grids = {
@@ -19,16 +19,22 @@ grids = {
         'fixed_args': '',
         'positional_args': {
             "NUM_GPUS": [NUM_GPUS],
-            "DISTRIBUTED_PORT": [43212],
-            "MODEL": ['transformer_lm_gpt3_medium'],
-            "EXPERIMENT": ['dense'],
+            "MODEL": ['transformer_lm_gpt3_small'],
+            "EXPERIMENT": ['dense', 'demix'],
             "DATA_BIN": [RUN_CONSTANTS.get('DATA_BIN')],
-            "ROOT_MODEL_FOLDER": [RUN_CONSTANTS.get('MODEL_FOLDER')],
-            "NUM_STEPS": [6000, 12000, 24000],
-            "UPDATE_FREQ": [32],
-            "LR": [2e-3],
-            "SWEEP_NAME": [SWEEP_NAME],
+            "PARAMS_TO_FREEZE": ["None"],
+            "COPYING_MODEL_FOLDER": ["None"],
+            "MODEL_FOLDER": [RUN_CONSTANTS.get('MODEL_FOLDER')],
+            "SUBFOLDER_NAME": [SWEEP_NAME],
+            "PHASE_ONE_RATIO": ["None"],
+            "RESET_ITEMS": ["None"],
+            "NUM_STEPS": [18000, 36000],
+            "UPDATE_FREQ": [8],
+            "LR": [1e-3],
+            "WANDB_PROJECT": ['test'],
+            "WANDB_ENTITY": ['scaling-demix'],
             "MOD_FOLDER": [MOD_FOLDER],
+            "DOMAIN_IDS": ['all']
         },
         'named_args': {},
     },
@@ -45,7 +51,7 @@ for sweep_name, grid in grids.items():
         cpus=4,
         nodes=1,
         #TODO change these
-        account='zlab',
+        account='bdata',
         partition='gpu-rtx6k',
         jobtime='48:00:00',
         mem_gb=50,
@@ -54,5 +60,4 @@ for sweep_name, grid in grids.items():
         dry_mode=DRY_MODE,
         add_name='end',
         DIR_PATH=MOD_FOLDER,
-        conda_env=RUN_CONSTANTS.get('CONDA_ENV'),
     )
