@@ -480,9 +480,8 @@ def submit_array_jobs(
     total_num_jobs = len(jobs_path) - 1
 
     # Request the number of GPUs (defaults to 1)
-    if gpus > 0:
-        gpustr = '#SBATCH --gpus-per-node={}'.format(gpus)
-        SBATCH_EXTRAS.append(gpustr)
+    gpustr = '#SBATCH --gpus-per-node={}'.format(gpus)
+    SBATCH_EXTRAS.append(gpustr)
 
     if constraints:
         SBATCH_EXTRAS.append("#SBATCH -C '{}'".format('&'.join(constraints)))

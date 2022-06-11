@@ -8,7 +8,7 @@ import numpy as np
 from pathlib import Path
 
 
-def main(model, debug=False, dry_mode=False, domains=None, data_bin=None, load_from_step=-1, average=False):
+def main(model, debug=False, dry_mode=False, domains=None, data_bin=None):
     DEBUG_MODE = debug
     DRY_MODE = dry_mode
 
@@ -24,48 +24,61 @@ def main(model, debug=False, dry_mode=False, domains=None, data_bin=None, load_f
         DATA_BIN = RUN_CONSTANTS.get('DATA_BIN')
     assert all([Path(DATA_BIN) / x in Path(DATA_BIN).glob("*/") for x in domains])
     
-    SWEEP_NAME = f"sweep_{MODEL}_average_{average}"
+    SWEEP_NAME = f"sweep_{MODEL}_average"
 
 
-    name_keys = ["MODEL",  "LOAD_FROM_STEP", "DOMAIN_ID", "AVERAGE"]
+    name_keys = ["MODEL",  "LOAD_FROM_STEP", "DOMAIN_ID", "AVERAGE", "TOPK", "UNIFORM"]
     from slurm_jobs.model_specs import SPECS
     SPECS = SPECS[MODEL]
-    NUM_GPUS = 8
 
-    NUM_NODES = 1 if NUM_GPUS < 8 else NUM_GPUS // 8
 
+    
     re_string = ''
     if not domains:
-        DOMAINS = [i for i in range(8)]
+        DOMAINS = [i for i in range(16)]
     else:
         DOMAINS = domains
 
-    if average:
-        average = "True"
-    else:
-        average = "False"
-    PATH_TO_DENSE_CHECKPOINTS = f'/checkpoint/suching/mod/_modular_gpt3_small_80K/modular_gpt3_small_80K_LR=0.0005/MODEL=transformerlmgpt3small_DOMAINID=1_LOADFROMSTEP=24000_RESETITEMS=dataloader_UPDATEFREQ=32_LR=0.0005/'
-
     NEW_MODEL_TOP_FOLDER = f'/checkpoint/suching/mod/model_averaging/average_{MODEL}/'
-
     grids = {
+        # SWEEP_NAME + "_3": {
+        #     'fixed_args': '',
+        #     'positional_args': {
+        #         "NUM_GPUS": [8],
+        #         "MODEL": [MODEL],
+        #         "DATA_BIN": [DATA_BIN],
+        #         "DOMAIN_ID": DOMAINS,
+        #         "COPYING_MODEL_FOLDER": [PATH_TO_DENSE_CHECKPOINTS],
+        #         "NEW_MODEL_TOP_FOLDER": [NEW_MODEL_TOP_FOLDER],
+        #         "CHECKPOINTS_SUBFOLDER": '.',
+        #         "LOAD_FROM_STEP": [1000, 8000,16000,56000,72000],
+        #         "AVERAGE": ["False"],
+        #         "TOPK": [8],
+        #         "UNIFORM": ["False"],
+        #         "PORT": [np.random.randint(1024, 65535)],
+        #         "MOD_FOLDER": [MOD_FOLDER]
+        #     },
+        #     'named_args': {},
+        # },
         SWEEP_NAME: {
             'fixed_args': '',
             'positional_args': {
-                "NUM_GPUS": [NUM_GPUS],
+                "NUM_GPUS": [8],
                 "MODEL": [MODEL],
                 "DATA_BIN": [DATA_BIN],
                 "DOMAIN_ID": DOMAINS,
-                "COPYING_MODEL_FOLDER": [PATH_TO_DENSE_CHECKPOINTS],
                 "NEW_MODEL_TOP_FOLDER": [NEW_MODEL_TOP_FOLDER],
                 "CHECKPOINTS_SUBFOLDER": '.',
-                "LOAD_FROM_STEP": [24000],
-                "AVERAGE": [average],
+                "LOAD_FROM_STEP": [15000],
+                "AVERAGE": ["True"],
+                "TOPK": [8],
+                "UNIFORM": ["False"],
                 "PORT": [np.random.randint(1024, 65535)],
                 "MOD_FOLDER": [MOD_FOLDER]
             },
             'named_args': {},
         },
+
     }
 
     for sweep_name, grid in grids.items():
@@ -75,12 +88,12 @@ def main(model, debug=False, dry_mode=False, domains=None, data_bin=None, load_f
             sweep_name,
             user=os.environ['USER'],
             prefix=f'bash {MOD_FOLDER}/demix/average.sh',
-            gpus=NUM_GPUS,
+            gpus=grid['positional_args']['NUM_GPUS'][0],
             cpus=RUN_CONSTANTS.get('NUM_CPUS'),
-            nodes=NUM_NODES,
+            nodes=1 if grid['positional_args']['NUM_GPUS'][0] < 8 else grid['positional_args']['NUM_GPUS'][0] // 8,
             account=RUN_CONSTANTS.get('SLURM_ACCOUNT'),
             partition=RUN_CONSTANTS.get('SLURM_PARTITION'),
-            jobtime="00:30:00",
+            jobtime="00:10:00",
             mem_gb=100,
             job_id_start=1,
             debug_mode=DEBUG_MODE,
@@ -98,9 +111,7 @@ if __name__ == '__main__':
     parser.add_argument('--dry-mode', action='store_true')
     parser.add_argument('--model', type=str)
     parser.add_argument('--domains', type=str, nargs="+")
-    parser.add_argument('--load-from-step', type=int, default=-1)
-    parser.add_argument('--average', action='store_true')
     parser.add_argument('--data-bin', type=str)
 
     args = parser.parse_args()
-    main(args.model, args.debug, args.dry_mode, args.domains, args.data_bin, args.load_from_step, args.average,)
+    main(args.model, args.debug, args.dry_mode, args.domains, args.data_bin)

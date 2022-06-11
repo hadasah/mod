@@ -53,7 +53,7 @@ EVAL_FOLDERS = {
             "mod": "/checkpoint/suching/mod/_modular_transformer_lm_gpt3_medium/modular_transformer_lm_gpt3_medium_LR=0.0005/"
         },
         "transformer_lm_gpt3_large": {
-            "dense": "",
+            "dense": "/checkpoint/suching/mod_baselines/MODEL=transformerlmgpt3large_NUMGPUS=64_EXPERIMENT=dense_NUMSTEPS=24000_UPDATEFREQ=32_LR=0.0005/",
             "demix": "/checkpoint/suching/mod_baselines/MODEL=transformerlmgpt3large_NUMGPUS=64_EXPERIMENT=demix_NUMSTEPS=24000_UPDATEFREQ=32_LR=0.0005/",
             "mod": "/checkpoint/suching/mod/_modular_transformer_lm_gpt3_large/modular_transformer_lm_gpt3_large_LR=0.0005/"
         },

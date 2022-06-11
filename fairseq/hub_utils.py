@@ -177,11 +177,11 @@ class GeneratorHubInterface(nn.Module):
         results = []
         for batch in self._build_batches(tokenized_sentences, skip_invalid_size_inputs):
             batch = utils.apply_to_sample(lambda t: t.to(self.device), batch)
-            print_r0("before inference_step")
+            # print_r0("before inference_step")
             translations = self.task.inference_step(
                 generator, self.models, batch, **inference_step_args
             )
-            print_r0("after inference step")
+            # print_r0("after inference step")
             for id, hypos in zip(batch["id"].tolist(), translations):
                 results.append((id, hypos))
 

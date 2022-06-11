@@ -105,6 +105,7 @@ echo $model;
 
 echo "estimating probabilities...";
 target_eval_split=valid_${target_domain};
+echo $model
  python -u fairseq_cli/ensemble_eval_lm.py $data_path \
 --path $model \
 --gen-subset $target_eval_split \
