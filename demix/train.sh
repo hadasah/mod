@@ -100,33 +100,20 @@ if [[ ${#domain_ids[@]} > 1 ]]; then
      done;
      
      DATA_PHRASE="$DATA_PATH \
-          --task multidomain_language_modeling 
+          --task multidomain_language_modeling \
           --valid-subset ${valid_domains#?} \
           --train-domains ${domains#?}  \
           --eval-domains ${domains#?} \
           --criterion desynchronized_cross_entropy     \
           "
 else
-     domains="";
-     valid_domains="";
-     for id in "${domain_ids[@]}"; do
-          domains="${domains},$id"
-          valid_domains="${valid_domains},valid_$id"
-     done;
-     
-     DATA_PHRASE="$DATA_PATH \
-          --task multidomain_language_modeling 
-          --valid-subset ${valid_domains#?} \
-          --train-domains ${domains#?}  \
-          --eval-domains ${domains#?} \
+     id=${domain_ids[0]}
+     valid_domains="valid_$id";
+     DATA_PHRASE="${DATA_PATH}/${id} \
+          --task language_modeling \
+          --valid-subset ${valid_domains} \
           --criterion cross_entropy     \
-          --unbalanced  \
-          "
-#      id=${domain_ids[0]}
-#      DATA_PHRASE="${DATA_PATH}/$id \
-#           --task language_modeling \
-#           --criterion cross_entropy     \
-#           ";
+          ";
 
 fi;
 echo $DATA_PHRASE;

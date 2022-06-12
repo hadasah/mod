@@ -107,7 +107,7 @@ echo $RESET_PHRASE;
 # Add distributed training args if necessary
 DISTRIBUTED_ARGS_PHRASE='';
 if [ $NUM_GPUS \> 1 ]; then
-     DISTRIBUTED_ARGS_PHRASE="--ddp-backend no_c10d --distributed-world-size $NUM_GPUS --distributed-port $((1024 + $RANDOM % 65535))";
+     DISTRIBUTED_ARGS_PHRASE="--ddp-backend no_c10d --distributed-world-size $NUM_GPUS --distributed-port $(($DISTRIBUTED_PORT + $DOMAIN_ID))";
 fi;
 echo "distributed args phrase";
 echo $DISTRIBUTED_ARGS_PHRASE;

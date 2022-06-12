@@ -24,8 +24,11 @@ def main(model, experiment, debug=False, dry_mode=False, domains=None):
     name_keys = ["EXPERIMENT", "NUM_STEPS", "UPDATE_FREQ", "LR", "NUM_GPUS"]
     
     if domains is None:
-        domains = SECONDARY_DOMAINS
+        domains = ["0,1,2,3,4,5,6,7,8"]
+        # domains = secondary_domains
     else:
+        if domains == 'secondary':
+            domains = secondary_domains
         name_keys.append("DOMAIN_IDS")
     
     if domains[0] in VALID:
