@@ -8,9 +8,6 @@ ROOT_MODEL_FOLDER=$3
 SUBFOLDERS=$4
 
 CHECKPOINT_IDS=$5
-# echo $ROOT_MODEL_FOLDER;
-# echo $SUBFOLDERS;
-# echo $CHECKPOINT_IDS;
 # target domain to evaluate on
 target_domain_ID=$6
 # Ensemble type, one of "simple_average","cached_prior", "updating_prior", "uniform_prior"
@@ -30,9 +27,11 @@ exclude_expert=${13}
 
 only_use_expert=${14} 
 
-MOD_FOLDER=${15}
+arch=${15}
 
-jq_path=${16}
+MOD_FOLDER=${16}
+
+jq_path=${17}
 
 echo $model_type
 OIFS=$IFS;
@@ -45,32 +44,6 @@ IDS_TO_DOMAINS=('1b' 'anonymized_openwebtext' 'anonymized_realnews' 'anonymized_
 
 target_domain=${IDS_TO_DOMAINS[$target_domain_ID]}
 
-# model=;
-
-# if [[ "$model_type" == "demix" ]]; then
-#     for i in $(seq 0 2 15); do
-#         if ([[ "$exclude_expert" != "True" ]] || [[ "$i" != "$target_domain_ID" ]]) && ([[ "$only_use_expert" != "True" ]] || [[ "$i" == "$target_domain_ID" ]]) && [[ "${model_checkpoint_ids[$i]}" != "None" ]]; then
-#             model=${model}:${ROOT_MODEL_FOLDER}/${MODEL_FOLDER}/checkpoint_best-rank-${i}.pt; 
-#         fi;
-#     done
-# elif [[ "$model_type" == "modular" ]]; then
-#     for i in $(seq 0 7); do 
-#         if ([[ "$exclude_expert" != "True" ]] || [[ "$i" != "$target_domain_ID" ]])  && ([[ "$only_use_expert" != "True" ]] || [[ "$i" == "$target_domain_ID" ]]) && [[ "${model_checkpoint_ids[$i]}" != "None" ]]; then
-#             model=${model}:${ROOT_MODEL_FOLDER}/MODEL=transformerlmgpt3small_DOMAINID=${i}_LOADFROMSTEP=${num_steps}_RESETITEMS=dataloader_UPDATEFREQ=32_LR=0.0005/checkpoint_${model_checkpoint_ids[$i]}.pt;
-#             # model=${model}:${ROOT_MODEL_FOLDER}/${subfolders[$i]}/checkpoint_${model_checkpoint_ids[$i]}.pt
-#         fi;    
-#     done
-# fi;
-# model="${model#?}";
-
-# evals_folder=evals_top${eval_top_k};
-# evals_folder=${evals_folder}_${id};
-# results_folder=${ROOT_MODEL_FOLDER}/${evals_folder}/${target_domain}/
-
-# prior_results_path=${ROOT_MODEL_FOLDER}/${evals_folder}/${target_domain}/dev_posteriors.jsonl;
-# results_path=${ROOT_MODEL_FOLDER}/${evals_folder}/${target_domain}/test_results.txt;
-
-# mkdir -p ${ROOT_MODEL_FOLDER}/${evals_folder}/${target_domain};
 cd $MOD_FOLDER;
 
 REGEX_NAME_STR=$SUBFOLDERS;

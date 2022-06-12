@@ -3,12 +3,10 @@ SWEEP_NAME=$1
 NUM_GPUS=$2
 # Number of nodes you'd like to train on (assuming 8 GPUs per node)
 NUM_NODES=$((${NUM_GPUS}/8))
-# Distributed port
 # Fairseq model name (e.g. transformer_lm; see https://github.com/kernelmachine/demix/blob/main/fairseq/models/transformer_lm.py for other options)
 ARCH=$3
 # Baseline type: choice between demix, dense, unbalanced_dense, and domain_token
 EXPERIMENT=$4
-MODEL_DIR=$5
 # Path to data-bins
 DATA_PATH=$5
 # Comma separated list of demix domains to train on. "all" or, e.g. "0,1"
@@ -21,29 +19,32 @@ OLD_DIR=$8
 SERIALIZATION_DIR=$9
 # Name of subdirectory containing checkpoint to copy
 SUBFOLDER_NAME=${10}
+# stop time hours
+STOP_TIME_HOURS=${11}
 # Ratio of updates to spend in first phase training - "None" or a float, e.g. 0.5
-PHASE_ONE_RATIO=${11}
+PHASE_ONE_RATIO=${12}
 # Number of updates to spend in first phase training - "None" or an int, e.g. 36000
-PHASE_ONE_UPDATE_NUM=${12}
+PHASE_ONE_UPDATE_NUM=${13}
 # comma separated list of items to reset in checkpoint (dataloader,meters,lr-scheduler,optimizer), or "None"
-RESET_ITEMS=${13};
+RESET_ITEMS=${14};
 # total number of steps in training -- determines lr schedule
-NUM_STEPS=${14};
+NUM_STEPS=${15};
 # update frequency
-UPDATE_FREQ=${15};
+UPDATE_FREQ=${16};
 # learning rate
-LR=${16};
-
-SAVE_INTERVAL_UPDATES=${17}
-DISTRIBUTED_PORT=${18}
+LR=${17};
+# 
+SAVE_INTERVAL_UPDATES=${18}
+# port for distributed comms
+DISTRIBUTED_PORT=${19}
 # name of wandb project to track model output (at wandb.ai)
-WANDB_PROJECT=${19};
+WANDB_PROJECT=${20};
 # name of wandb entity 
-WANDB_ENTITY=${20};
+WANDB_ENTITY=${21};
 # path to mod code folder
-MOD_FOLDER=${21};
+MOD_FOLDER=${22};
 # Unique identifer of this run
-RUN_ID=${22}
+RUN_ID=${23}
 
 
 export WANDB_NAME=$SWEEP_NAME/$RUN_ID;
@@ -84,10 +85,57 @@ else
 fi;
 echo $DATA_PHRASE;
 
+DATA_PHRASE="";
+OIFS=$IFS;
+IFS=','
+read -a domain_ids <<< "$DOMAIN_ID";
+IFS=$OIFS;
+
+if [[ ${#domain_ids[@]} > 1 ]]; then
+     domains="";
+     valid_domains="";
+     for id in "${domain_ids[@]}"; do
+          domains="${domains},$id"
+          valid_domains="${valid_domains},valid_$id"
+     done;
+     
+     DATA_PHRASE="$DATA_PATH \
+          --task multidomain_language_modeling 
+          --valid-subset ${valid_domains#?} \
+          --train-domains ${domains#?}  \
+          --eval-domains ${domains#?} \
+          --criterion desynchronized_cross_entropy     \
+          "
+else
+     domains="";
+     valid_domains="";
+     for id in "${domain_ids[@]}"; do
+          domains="${domains},$id"
+          valid_domains="${valid_domains},valid_$id"
+     done;
+     
+     DATA_PHRASE="$DATA_PATH \
+          --task multidomain_language_modeling 
+          --valid-subset ${valid_domains#?} \
+          --train-domains ${domains#?}  \
+          --eval-domains ${domains#?} \
+          --criterion cross_entropy     \
+          --unbalanced  \
+          "
+#      id=${domain_ids[0]}
+#      DATA_PHRASE="${DATA_PATH}/$id \
+#           --task language_modeling \
+#           --criterion cross_entropy     \
+#           ";
+
+fi;
+echo $DATA_PHRASE;
+
+
 TOKENS_PER_SAMPLE=1024;
 BATCH_SIZE=2;
 LOG_INTERVAL=50;
-KEEP_INTERVAL_UPDATES=30;
+KEEP_INTERVAL_UPDATES=-1;
 
 if [[ $ARCH == *"gpt3_small"* ]]; then
      CLIP_NORM=0.1;
@@ -219,6 +267,7 @@ if [[ $EXPERIMENT == *"demix"* ]]; then
           --data-parallel-groups "${DATA_PARALLEL_GROUPS}" \
           --all-gather-list-size 32000 \
           $RESET_PHRASE \
+	     --stop-time-hours $STOP_TIME_HOURS \
           --pad-to-fixed-length;
 elif [[ $EXPERIMENT == *"unbalanced"* ]]; then
      python $MOD_FOLDER/fairseq_cli/train.py $DATA_PHRASE \
@@ -230,7 +279,6 @@ elif [[ $EXPERIMENT == *"unbalanced"* ]]; then
           --save-interval-updates $SAVE_INTERVAL_UPDATES     \
           --keep-interval-updates $KEEP_INTERVAL_UPDATES    \
           --arch $ARCH    \
-          --criterion desynchronized_cross_entropy     \
           --lr-scheduler polynomial_decay     \
           --num-workers 2 \
           --max-sentences $BATCH_SIZE \
@@ -256,6 +304,7 @@ elif [[ $EXPERIMENT == *"unbalanced"* ]]; then
           $DISTRIBUTED_ARGS_PHRASE \
           --all-gather-list-size 32000 \
           $RESET_PHRASE \
+	     --stop-time-hours $STOP_TIME_HOURS \
           --unbalanced;
 elif [[ $EXPERIMENT == *"dense"* ]]; then
      python $MOD_FOLDER/fairseq_cli/train.py $DATA_PHRASE \
@@ -291,9 +340,10 @@ elif [[ $EXPERIMENT == *"dense"* ]]; then
           --fp16 \
           $DISTRIBUTED_ARGS_PHRASE \
           $RESET_PHRASE \
+	     --stop-time-hours $STOP_TIME_HOURS \
           --all-gather-list-size 32000;
 elif [[ $EXPERIMENT == *"switch"* ]]; then
-     python $MOD_FOLDER/fairseq_cli/train.py $DATA_PATH     \
+     python $MOD_FOLDER/fairseq_cli/train.py $DATA_PHRASE \
           --task multidomain_language_modeling     \
           --sample-break-mode none     \
           --log-format simple     \
@@ -339,6 +389,7 @@ elif [[ $EXPERIMENT == *"switch"* ]]; then
           --moe-second-expert-policy all \
           $DISTRIBUTED_ARGS_PHRASE \
           $RESET_PHRASE \
+	     --stop-time-hours $STOP_TIME_HOURS \
           --all-gather-list-size 32000;
 elif [[ $EXPERIMENT == *"gshard"* ]]; then
      python $MOD_FOLDER/fairseq_cli/train.py $DATA_PHRASE     \
@@ -370,9 +421,6 @@ elif [[ $EXPERIMENT == *"gshard"* ]]; then
           --wandb-entity $WANDB_ENTITY \
           --save-dir $SERIALIZATION_DIR/$RUN_ID/         \
           --batch-size-valid 2                        \
-          --train-domains $domains \
-          --eval-domains $domains \
-          --valid-subset $valid_subset \
           --required-batch-size-multiple 1 \
           --update-freq $UPDATE_FREQ \
           --fp16 \
@@ -384,6 +432,7 @@ elif [[ $EXPERIMENT == *"gshard"* ]]; then
           --moe-gate-loss-combine-method sum \
           --moe-second-expert-policy all \
           $DISTRIBUTED_ARGS_PHRASE \
+	     --stop-time-hours $STOP_TIME_HOURS \
           $RESET_PHRASE \
           --all-gather-list-size 32000;
 elif [[ $EXPERIMENT == *"domain_token"* ]]; then
@@ -397,7 +446,6 @@ elif [[ $EXPERIMENT == *"domain_token"* ]]; then
           --save-interval-updates $SAVE_INTERVAL_UPDATES     \
           --keep-interval-updates $KEEP_INTERVAL_UPDATES    \
           --arch $ARCH    \
-	     --criterion desynchronized_cross_entropy     \
           --lr-scheduler polynomial_decay     \
           --num-workers 2 \
           --max-sentences $BATCH_SIZE \
@@ -423,5 +471,6 @@ elif [[ $EXPERIMENT == *"domain_token"* ]]; then
           $DISTRIBUTED_ARGS_PHRASE \
           --all-gather-list-size 32000 \
           $RESET_PHRASE \
+	     --stop-time-hours $STOP_TIME_HOURS \
           --add-domain-token;
 fi;

@@ -1,11 +1,15 @@
 from mod_utils import mod_checkpoint_utils
 from slurm_jobs.slurm_constants import CONSTANTS
 from slurm_jobs.slurm_job import run_grid
+from slurm_jobs.model_specs import *
 import fairseq
 import os
 import argparse
+import numpy as np
 
-def main(model, debug=False, dry_mode=False, from_scratch=False, domains=None, load_from_step=0, jobtime='50:00:00'):
+
+
+def main(model, debug=False, dry_mode=False, from_scratch=False, domains=None, load_from_step=0, continue_train=False, INIT_ID=''):
     DEBUG_MODE = debug
     DRY_MODE = dry_mode
     FROM_SCRATCH = from_scratch
@@ -16,7 +20,8 @@ def main(model, debug=False, dry_mode=False, from_scratch=False, domains=None, l
     RUN_CONSTANTS = CONSTANTS.get(username)
     MOD_FOLDER = RUN_CONSTANTS.get('MOD_FOLDER')
 
-    SWEEP_NAME = f"sweep_{MODEL}_mod"
+    
+    SWEEP_NAME = f"sweep_{MODEL}_INIT_{INIT_ID}_mod"
 
     name_keys = ["MODEL",  "LOAD_FROM_STEP", "RESET_ITEMS", "LR", "UPDATE_FREQ", "DOMAIN_ID"]
     from slurm_jobs.model_specs import SPECS
@@ -26,16 +31,19 @@ def main(model, debug=False, dry_mode=False, from_scratch=False, domains=None, l
 
     if FROM_SCRATCH:
         PATH_TO_DENSE_CHECKPOINTS = "None"
-        NEW_MODEL_TOP_FOLDER = f'/checkpoint/suching/mod/_modular_{MODEL}/modular_{MODEL}_LR={SPECS["LR"]}_from_scratch/'
-        SWEEP_NAME += "_from_scratch"
+        # NEW_MODEL_TOP_FOLDER = f'/checkpoint/{username}/mod/_modular_{MODEL}/modular_{MODEL}_LR={SPECS["LR"]}/'
+        # SWEEP_NAME += "_from_scratch"
         FOLDERS = ["None"]
         SPECS['MOD_FROM_STEPS'] = [0]
     else:
-        # modify to path to dense checkpoint you want to use
-        #PATH_TO_DENSE_CHECKPOINTS = '/checkpoint/suching/fp16/'
-        PATH_TO_DENSE_CHECKPOINTS = '/checkpoint/suching/mod_publication/NUMGPUS=32_EXPERIMENT=dense_NUMSTEPS=32000_UPDATEFREQ=32_LR=0.0005/'
-        NEW_MODEL_TOP_FOLDER = f'/checkpoint/suching/mod/_modular_{MODEL}/modular_{MODEL}_LR={SPECS["LR"]}/'
-
+        print(MODEL)
+        print(INIT_ID)
+        PATH_TO_DENSE_CHECKPOINTS = INIT_MODEL_FOLDERS.get(MODEL).get(INIT_ID)
+        if PATH_TO_DENSE_CHECKPOINTS is None:
+            PATH_TO_DENSE_CHECKPOINTS = f'/checkpoint/margaretli/mod_publication/NUMGPUS=16_EXPERIMENT=dense_NUMSTEPS=80000_UPDATEFREQ=32_LR=0.0005_DOMAINIDS={INIT_ID}/'
+        # NEW_MODEL_TOP_FOLDER = f'/checkpoint/{username}/mod/_modular_{MODEL}/modular_{MODEL}_LR={SPECS["LR"]}/'
+        # if INIT_ID != 'default':
+        #     NEW_MODEL_TOP_FOLDER = f'/checkpoint/{username}/mod/_modular_{MODEL}/modular_{MODEL}_LR={SPECS["LR"]}_INIT={INIT_ID}/'
         re_string = ''
         FOLDERS = mod_checkpoint_utils.find_folders(PATH_TO_DENSE_CHECKPOINTS, re_string=re_string)
         print(FOLDERS)
@@ -43,18 +51,23 @@ def main(model, debug=False, dry_mode=False, from_scratch=False, domains=None, l
         DOMAINS = [i for i in range(8)]
     else:
         DOMAINS = domains
+    if continue_train:
+        PATH_TO_DENSE_CHECKPOINTS = 'None'
     grids = {
         SWEEP_NAME: {
             'fixed_args': '',
             'positional_args': {
+                "SWEEP_NAME": [SWEEP_NAME],
                 "NUM_GPUS": [NUM_GPUS],
                 "MODEL": [MODEL],
+                "EXPERIMENT": ['mod'],
                 "DATA_BIN": [RUN_CONSTANTS.get('DATA_BIN')],
                 "DOMAIN_ID": DOMAINS,
                 "PARAMS_TO_FREEZE": ["None"],
                 "COPYING_MODEL_FOLDER": [PATH_TO_DENSE_CHECKPOINTS],
-                "NEW_MODEL_TOP_FOLDER": [NEW_MODEL_TOP_FOLDER],
+                "MODEL_FOLDER": [RUN_CONSTANTS.get('MODEL_FOLDER')],
                 "CHECKPOINTS_SUBFOLDER": FOLDERS,
+                "STOP_TIME_HOURS": [SPECS['TRAIN_HOURS']],
                 "PHASE_ONE_RATIO": ["None"],
                 "PHASE_ONE_UPDATE_NUM": [load_from_step],
                 "RESET_ITEMS": ['dataloader'],
@@ -64,6 +77,7 @@ def main(model, debug=False, dry_mode=False, from_scratch=False, domains=None, l
                 "WANDB_PROJECT": ['mod_test'],
                 "WANDB_ENTITY": ['scaling-demix'],
                 "MOD_FOLDER": [MOD_FOLDER],
+                "DISTRIBUTED_PORT": [np.random.randint(1024, 65535)],
             },
             'named_args': {},
         },
@@ -81,7 +95,7 @@ def main(model, debug=False, dry_mode=False, from_scratch=False, domains=None, l
             nodes=NUM_NODES,
             account=RUN_CONSTANTS.get('SLURM_ACCOUNT'),
             partition=RUN_CONSTANTS.get('SLURM_PARTITION'),
-            jobtime=jobtime,
+            jobtime=RUN_CONSTANTS.get('JOBTIME'),
             mem_gb=RUN_CONSTANTS.get('MEM_GB_MOD'),
             job_id_start=1,
             debug_mode=DEBUG_MODE,
@@ -91,6 +105,7 @@ def main(model, debug=False, dry_mode=False, from_scratch=False, domains=None, l
             logroot=NEW_MODEL_TOP_FOLDER,
             saveroot=NEW_MODEL_TOP_FOLDER,
             conda_env_name=RUN_CONSTANTS.get('CONDA_ENV_NAME'),
+            volta32=True,
         )
 
 if __name__ == '__main__':
@@ -100,7 +115,7 @@ if __name__ == '__main__':
     parser.add_argument('--model', type=str)
     parser.add_argument('--domains', type=int, nargs="+")
     parser.add_argument('--load-from-step', type=int)
-    parser.add_argument('--jobtime', type=str)
     parser.add_argument('--from-scratch', action='store_true')
+    parser.add_argument('--init-id', type=str, default='default')
     args = parser.parse_args()
-    main(args.model, args.debug, args.dry_mode, args.from_scratch, args.domains, args.load_from_step, args.jobtime)
+    main(args.model, args.debug, args.dry_mode, args.from_scratch, args.domains, args.load_from_step, args.continue_train, args.init_id)
