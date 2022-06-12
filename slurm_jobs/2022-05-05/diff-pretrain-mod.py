@@ -3,6 +3,7 @@ from slurm_jobs.slurm_constants import CONSTANTS
 from slurm_jobs.slurm_job import run_grid
 import fairseq
 import os
+import numpy as np
 
 username = os.getlogin()
 if username not in CONSTANTS:

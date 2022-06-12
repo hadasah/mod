@@ -17,7 +17,6 @@ def add_args():
     return parser.parse_args()
 
 
-
 def main(
     regex_str, model_folder, model_type, checkpoint_ids, generalist_model,
     only_use_expert, exclude_expert, target_domain_id):
@@ -38,13 +37,13 @@ def main(
             (not exclude_expert or target_domain_id != i)
         ):
             if model_type == 'demix':
-                models.append(f'{model_folder}/checkpoint_{checkpoint_ids[i]}-rank-{i}.pt')
+                rank = i * num_gpus // 8
+                models.append(f'{model_folder}/checkpoint_{checkpoint_ids[rank]}-rank-{rank}.pt')
             elif model_type == 'modular':
                 models.append(f'{model_folder}/{selected_folders[i]}/checkpoint_{checkpoint_ids[i]}.pt')
     
     if generalist_model != "None":
         models.append(generalist_model)
-        
     print(result_folder, ':'.join(models))
 
 

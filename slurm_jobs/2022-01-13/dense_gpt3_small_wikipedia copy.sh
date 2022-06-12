@@ -36,7 +36,7 @@ LR=5e-4;
 CLIP_NORM=0.1;
 UPDATE_FREQ=8;
 NUM_STEPS=300000;
-SAVE_INTERVAL_UPDATES=3000;
+SAVE_INTERVAL_UPDATES=6000;
 VALIDATION_INTERVAL=3000;
 NUM_WARMUP_STEPS=$((${NUM_STEPS} * 8 / 100));
 
@@ -71,7 +71,7 @@ fairseq-train $DATA_PATH \
           --batch-size-valid 2                        \
           --wandb-project $WANDB_PROJECT  \
           --required-batch-size-multiple 1 \
-          --memory-efficient-fp16 \
+          --fp16 \
           --distributed-world-size $NUM_GPUS \
           --distributed-port $PORT \
           --ddp-backend no_c10d \

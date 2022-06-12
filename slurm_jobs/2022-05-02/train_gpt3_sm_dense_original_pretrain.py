@@ -1,6 +1,7 @@
 from slurm_jobs.slurm_job import run_grid
 from slurm_jobs.slurm_constants import CONSTANTS
 import os
+import numpy as np
 
 username = os.getlogin()
 RUN_CONSTANTS = CONSTANTS.get(username)
@@ -23,7 +24,7 @@ grids = {
             "MODEL": ['transformer_lm_gpt3_small'],
             "EXPERIMENT": ['dense', ],
             "DATA_BIN": [RUN_CONSTANTS.get('DATA_BIN')],
-            "DOMAIN_IDS": [3, 7],
+            "DOMAIN_IDS": [7],
             "PARAMS_TO_FREEZE": ["None"],
             "COPYING_MODEL_FOLDER": ["None"],
             "MODEL_FOLDER": [RUN_CONSTANTS.get('MODEL_FOLDER')],
@@ -34,6 +35,8 @@ grids = {
             "NUM_STEPS": [300000],
             "UPDATE_FREQ": [8],
             "LR": [5e-4],
+            "SAVE_INTERVAL_UPDATES": [6000],
+            "DISTRIBUTED_PORT": [np.random.randint(1024, 65535)],
             "WANDB_PROJECT": ['test'],
             "WANDB_ENTITY": ['scaling-demix'],
             "MOD_FOLDER": [MOD_FOLDER],

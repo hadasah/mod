@@ -3,7 +3,6 @@ SWEEP_NAME=$1
 NUM_GPUS=$2
 # Number of nodes you'd like to train on (assuming 8 GPUs per node)
 NUM_NODES=$((${NUM_GPUS}/8))
-# Distributed port
 # Fairseq model name (e.g. transformer_lm; see https://github.com/kernelmachine/demix/blob/main/fairseq/models/transformer_lm.py for other options)
 ARCH=$3
 # Baseline type: choice between demix, dense, unbalanced_dense, and domain_token
@@ -20,26 +19,32 @@ OLD_DIR=$8
 SERIALIZATION_DIR=$9
 # Name of subdirectory containing checkpoint to copy
 SUBFOLDER_NAME=${10}
+# stop time hours
+STOP_TIME_HOURS=${11}
 # Ratio of updates to spend in first phase training - "None" or a float, e.g. 0.5
-PHASE_ONE_RATIO=${11}
+PHASE_ONE_RATIO=${12}
 # Number of updates to spend in first phase training - "None" or an int, e.g. 36000
-PHASE_ONE_UPDATE_NUM=${12}
+PHASE_ONE_UPDATE_NUM=${13}
 # comma separated list of items to reset in checkpoint (dataloader,meters,lr-scheduler,optimizer), or "None"
-RESET_ITEMS=${13};
+RESET_ITEMS=${14};
 # total number of steps in training -- determines lr schedule
-NUM_STEPS=${14};
+NUM_STEPS=${15};
 # update frequency
-UPDATE_FREQ=${15};
+UPDATE_FREQ=${16};
 # learning rate
-LR=${16};
+LR=${17};
+# 
+SAVE_INTERVAL_UPDATES=${18}
+# port for distributed comms
+DISTRIBUTED_PORT=${19}
 # name of wandb project to track model output (at wandb.ai)
-WANDB_PROJECT=${17};
+WANDB_PROJECT=${20};
 # name of wandb entity 
-WANDB_ENTITY=${18};
+WANDB_ENTITY=${21};
 # path to mod code folder
-MOD_FOLDER=${19};
+MOD_FOLDER=${22};
 # Unique identifer of this run
-RUN_ID=${20}
+RUN_ID=${23}
 
 
 export WANDB_NAME=$SWEEP_NAME/$RUN_ID;
@@ -50,10 +55,6 @@ IDS_TO_DOMAINS=('1b' 'anonymized_openwebtext' 'anonymized_realnews' 'anonymized_
 if [[ $DOMAIN_ID == "all" ]]; then
      DOMAIN_ID=0,1,2,3,4,5,6,7;
 fi;
-     # list of domains you'd like to train on, that can be found in $DATA_PATH
-# domains=1b,anonymized_openwebtext,anonymized_realnews,anonymized_reviews,cs,legal,med,reddit;
-# # validation datasets for each domain
-# valid_subset=valid_1b,valid_anonymized_openwebtext,valid_anonymized_realnews,valid_anonymized_reviews,valid_cs,valid_legal,valid_med,valid_reddit;
 
 DATA_PHRASE="";
 OIFS=$IFS;
@@ -84,6 +85,39 @@ else
 fi;
 echo $DATA_PHRASE;
 
+DATA_PHRASE="";
+OIFS=$IFS;
+IFS=','
+read -a domain_ids <<< "$DOMAIN_ID";
+IFS=$OIFS;
+
+if [[ ${#domain_ids[@]} > 1 ]]; then
+     domains="";
+     valid_domains="";
+     for id in "${domain_ids[@]}"; do
+          domains="${domains},$id"
+          valid_domains="${valid_domains},valid_$id"
+     done;
+     
+     DATA_PHRASE="$DATA_PATH \
+          --task multidomain_language_modeling \
+          --valid-subset ${valid_domains#?} \
+          --train-domains ${domains#?}  \
+          --eval-domains ${domains#?} \
+          --criterion desynchronized_cross_entropy     \
+          "
+else
+     id=${domain_ids[0]}
+     valid_domains="valid_$id";
+     DATA_PHRASE="${DATA_PATH}/${id} \
+          --task language_modeling \
+          --valid-subset ${valid_domains} \
+          --criterion cross_entropy     \
+          ";
+
+fi;
+echo $DATA_PHRASE;
+
 
 TOKENS_PER_SAMPLE=1024;
 BATCH_SIZE=2;
@@ -92,28 +126,23 @@ KEEP_INTERVAL_UPDATES=-1;
 
 if [[ $ARCH == *"gpt3_small"* ]]; then
      CLIP_NORM=0.1;
-     SAVE_INTERVAL_UPDATES=6000;
      VALIDATION_INTERVAL=3000;
      NUM_WARMUP_STEPS=$((${NUM_STEPS} * 8 / 100));
 elif [[ $ARCH == *"gpt3_medium"* ]]; then
      NUM_WARMUP_STEPS=$((${NUM_STEPS} * 8 / 100));
-     SAVE_INTERVAL_UPDATES=3000;
      VALIDATION_INTERVAL=2000;
      CLIP_NORM=0.1;
 elif [[ $ARCH == *"gpt3_large"* ]]; then
      NUM_WARMUP_STEPS=$((${NUM_STEPS} * 8 / 100));
-     SAVE_INTERVAL_UPDATES=2000;
      VALIDATION_INTERVAL=1000;
      CLIP_NORM=0.1;
 elif [[ $ARCH == *"gpt3_xl"* ]]; then
      NUM_WARMUP_STEPS=$((${NUM_STEPS} * 8 / 100));
-     SAVE_INTERVAL_UPDATES=2000;
      VALIDATION_INTERVAL=500;
      CLIP_NORM=0.1;
 elif [[ $ARCH == *"transformer_lm"* ]]; then
      TOKENS_PER_SAMPLE=1024;
      CLIP_NORM=0.1;
-     SAVE_INTERVAL_UPDATES=12000;
      VALIDATION_INTERVAL=6000;
      NUM_WARMUP_STEPS=$((${NUM_STEPS} * 8 / 100));
 fi;
@@ -123,8 +152,7 @@ if [[ $NUM_GPUS == "8" ]]; then
      if [[ $EXPERIMENT == *"dense"*  || $EXPERIMENT == *"domain_token"* ]]; then
           DATA_PARALLEL_GROUPS="0,1,2,3,4,5,6,7";
      elif  [[ $EXPERIMENT == *"demix"* ]]; then
-          # DATA_PARALLEL_GROUPS="0 1 2 3 4 5 6 7";
-          DATA_PARALLEL_GROUPS="0,1 2,3 4,5 6,7";
+          DATA_PARALLEL_GROUPS="0 1 2 3 4 5 6 7";
      fi;
 elif [[ $NUM_GPUS == "16" ]]; then
      if [[ $EXPERIMENT == *"dense"*  || $EXPERIMENT == *"domain_token"* ]]; then
@@ -161,7 +189,7 @@ read -a reset_vals <<< "$RESET_ITEMS";
 IFS=$OIFS;
 
 if [ $NUM_GPUS \> 1 ]; then
-     DISTRIBUTED_ARGS_PHRASE="--ddp-backend no_c10d --distributed-world-size $NUM_GPUS --distributed-port 12345";
+     DISTRIBUTED_ARGS_PHRASE="--ddp-backend no_c10d --distributed-world-size $NUM_GPUS --distributed-port $DISTRIBUTED_PORT";
 fi;
 
 if [[ $OLD_DIR != "None" ]]; then
@@ -218,7 +246,7 @@ if [[ $EXPERIMENT == *"demix"* ]]; then
           --wandb-project $WANDB_PROJECT           \
           --wandb-entity $WANDB_ENTITY \
           --required-batch-size-multiple 1 \
-          --memory-efficient-fp16 \
+          --fp16 \
           --desynchronize --domain-parallel \
           $DISTRIBUTED_ARGS_PHRASE \
           --sync-type manual \
@@ -226,6 +254,7 @@ if [[ $EXPERIMENT == *"demix"* ]]; then
           --data-parallel-groups "${DATA_PARALLEL_GROUPS}" \
           --all-gather-list-size 32000 \
           $RESET_PHRASE \
+	     --stop-time-hours $STOP_TIME_HOURS \
           --pad-to-fixed-length;
 elif [[ $EXPERIMENT == *"unbalanced"* ]]; then
      python $MOD_FOLDER/fairseq_cli/train.py $DATA_PHRASE \
@@ -237,7 +266,6 @@ elif [[ $EXPERIMENT == *"unbalanced"* ]]; then
           --save-interval-updates $SAVE_INTERVAL_UPDATES     \
           --keep-interval-updates $KEEP_INTERVAL_UPDATES    \
           --arch $ARCH    \
-          --criterion desynchronized_cross_entropy     \
           --lr-scheduler polynomial_decay     \
           --num-workers 2 \
           --max-sentences $BATCH_SIZE \
@@ -259,10 +287,11 @@ elif [[ $EXPERIMENT == *"unbalanced"* ]]; then
           --wandb-project $WANDB_PROJECT           \
           --wandb-entity $WANDB_ENTITY \
           --required-batch-size-multiple 1 \
-          --memory-efficient-fp16 \
+          --fp16 \
           $DISTRIBUTED_ARGS_PHRASE \
           --all-gather-list-size 32000 \
           $RESET_PHRASE \
+	     --stop-time-hours $STOP_TIME_HOURS \
           --unbalanced;
 elif [[ $EXPERIMENT == *"dense"* ]]; then
      python $MOD_FOLDER/fairseq_cli/train.py $DATA_PHRASE \
@@ -298,9 +327,10 @@ elif [[ $EXPERIMENT == *"dense"* ]]; then
           --fp16 \
           $DISTRIBUTED_ARGS_PHRASE \
           $RESET_PHRASE \
+	     --stop-time-hours $STOP_TIME_HOURS \
           --all-gather-list-size 32000;
 elif [[ $EXPERIMENT == *"switch"* ]]; then
-     python $MOD_FOLDER/fairseq_cli/train.py $DATA_PATH     \
+     python $MOD_FOLDER/fairseq_cli/train.py $DATA_PHRASE \
           --task multidomain_language_modeling     \
           --sample-break-mode none     \
           --log-format simple     \
@@ -346,6 +376,7 @@ elif [[ $EXPERIMENT == *"switch"* ]]; then
           --moe-second-expert-policy all \
           $DISTRIBUTED_ARGS_PHRASE \
           $RESET_PHRASE \
+	     --stop-time-hours $STOP_TIME_HOURS \
           --all-gather-list-size 32000;
 elif [[ $EXPERIMENT == *"gshard"* ]]; then
      python $MOD_FOLDER/fairseq_cli/train.py $DATA_PHRASE     \
@@ -377,9 +408,6 @@ elif [[ $EXPERIMENT == *"gshard"* ]]; then
           --wandb-entity $WANDB_ENTITY \
           --save-dir $SERIALIZATION_DIR/$RUN_ID/         \
           --batch-size-valid 2                        \
-          --train-domains $domains \
-          --eval-domains $domains \
-          --valid-subset $valid_subset \
           --required-batch-size-multiple 1 \
           --update-freq $UPDATE_FREQ \
           --fp16 \
@@ -391,6 +419,7 @@ elif [[ $EXPERIMENT == *"gshard"* ]]; then
           --moe-gate-loss-combine-method sum \
           --moe-second-expert-policy all \
           $DISTRIBUTED_ARGS_PHRASE \
+	     --stop-time-hours $STOP_TIME_HOURS \
           $RESET_PHRASE \
           --all-gather-list-size 32000;
 elif [[ $EXPERIMENT == *"domain_token"* ]]; then
@@ -404,7 +433,6 @@ elif [[ $EXPERIMENT == *"domain_token"* ]]; then
           --save-interval-updates $SAVE_INTERVAL_UPDATES     \
           --keep-interval-updates $KEEP_INTERVAL_UPDATES    \
           --arch $ARCH    \
-	     --criterion desynchronized_cross_entropy     \
           --lr-scheduler polynomial_decay     \
           --num-workers 2 \
           --max-sentences $BATCH_SIZE \
@@ -426,9 +454,10 @@ elif [[ $EXPERIMENT == *"domain_token"* ]]; then
           --wandb-project $WANDB_PROJECT           \
           --wandb-entity $WANDB_ENTITY \
           --required-batch-size-multiple 1 \
-          --memory-efficient-fp16 \
+          --fp16 \
           $DISTRIBUTED_ARGS_PHRASE \
           --all-gather-list-size 32000 \
           $RESET_PHRASE \
+	     --stop-time-hours $STOP_TIME_HOURS \
           --add-domain-token;
 fi;

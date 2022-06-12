@@ -8,16 +8,16 @@ CHECKPOINT_ID=$4
 # split you'd like to evaluate on ("valid" or "test")
 split=$5
 # target domain to evaluate on
-target_domain_ID=$6
+target_domain=$6
 
 DEMIX_FOLDER=$7
 
 force_domain_token=$8
 
 
-IDS_TO_DOMAINS=('1b' 'anonymized_openwebtext' 'anonymized_realnews' 'anonymized_reviews' 'cs' 'legal' 'med' 'reddit' 'anonymized_latest_news_redo' 'anonymized_tweets_redo' 'anonymized_yelp_reviews_redo' 'cord19-redo' 'github_redo' 'gutenberg' 'legal_contracts' 'qasper');
+# IDS_TO_DOMAINS=('1b' 'anonymized_openwebtext' 'anonymized_realnews' 'anonymized_reviews' 'cs' 'legal' 'med' 'reddit' 'anonymized_latest_news_redo' 'anonymized_tweets_redo' 'anonymized_yelp_reviews_redo' 'cord19-redo' 'github_redo' 'gutenberg' 'legal_contracts' 'qasper');
 
-target_domain=${IDS_TO_DOMAINS[$target_domain_ID]}
+# target_domain=${IDS_TO_DOMAINS[$target_domain_ID]}
 
 model=${ROOT_MODEL_FOLDER}/${model_folder}/checkpoint_${CHECKPOINT_ID}.pt;
 

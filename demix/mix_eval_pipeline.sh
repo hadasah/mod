@@ -8,9 +8,6 @@ ROOT_MODEL_FOLDER=$3
 SUBFOLDERS=$4
 
 CHECKPOINT_IDS=$5
-# echo $ROOT_MODEL_FOLDER;
-# echo $SUBFOLDERS;
-# echo $CHECKPOINT_IDS;
 # target domain to evaluate on
 target_domain_ID=$6
 # Ensemble type, one of "simple_average","cached_prior", "updating_prior", "uniform_prior"
@@ -30,9 +27,11 @@ exclude_expert=${13}
 
 only_use_expert=${14} 
 
-MOD_FOLDER=${15}
+arch=${15}
 
-jq_path=${16}
+MOD_FOLDER=${16}
+
+jq_path=${17}
 
 echo $model_type
 OIFS=$IFS;
@@ -44,34 +43,6 @@ IFS=$OIFS;
 IDS_TO_DOMAINS=('1b' 'anonymized_openwebtext' 'anonymized_realnews' 'anonymized_reviews' 'cs' 'legal' 'med' 'reddit' 'anonymized_latest_news_redo' 'anonymized_tweets_redo' 'anonymized_yelp_reviews_redo' 'cord19-redo' 'github_redo' 'gutenberg' 'legal_contracts' 'qasper');
 
 target_domain=${IDS_TO_DOMAINS[$target_domain_ID]}
-
-model=;
-
-if [[ "$model_type" == "demix" ]]; then
-    for i in $(seq 0 7); do 
-        if ([[ "$exclude_expert" != "True" ]] || [[ "$i" != "$target_domain_ID" ]]) && ([[ "$only_use_expert" != "True" ]] || [[ "$i" == "$target_domain_ID" ]]) && [[ "${model_checkpoint_ids[$i]}" != "None" ]]; then
-            model=${model}:${ROOT_MODEL_FOLDER}/${MODEL_FOLDER}/checkpoint_${model_checkpoint_ids[$i]}-rank-${i}.pt; 
-        fi;
-    done
-elif [[ "$model_type" == "modular" ]]; then
-    for i in $(seq 0 7); do 
-        if ([[ "$exclude_expert" != "True" ]] || [[ "$i" != "$target_domain_ID" ]])  && ([[ "$only_use_expert" != "True" ]] || [[ "$i" == "$target_domain_ID" ]]) && [[ "${model_checkpoint_ids[$i]}" != "None" ]]; then
-            # /checkpoint/suching/suchin_mod/small/_EXPERIMENT\=dense_NUMSTEPS\=36000_LR\=0.001/_DOMAIN_3_MOD_STEPS_30000_PHASE1_DENSE
-            #model=${model}:${ROOT_MODEL_FOLDER}/${MODEL_FOLDER}/_DOMAIN_${i}_MOD_STEPS_${num_steps}_PHASE1_DENSE/checkpoint_last.pt
-            # model=${model}:${ROOT_MODEL_FOLDER}/${MODEL_FOLDER}/DOMAIN_${i}/${num_steps}/checkpoint_${model_checkpoint_ids[$i]}-rank-${i}.pt
-#/checkpoint/suching/suchin_mod//small//_EXPERIMENT=demix_mod_NUMSTEPS=36000_LR=0.001/DOMAIN_3/6000/
-            # model=${model}:${ROOT_MODEL_FOLDER}/${MODEL_FOLDER}/DOMAIN_${i}/$num_steps/checkpoint_last-rank-0.pt
-            # model=${model}:${ROOT_MODEL_FOLDER}/${MODEL_FOLDER}${i}/checkpoint_${model_checkpoint_ids[$i]}.pt;
-            model=${model}:${ROOT_MODEL_FOLDER}/${subfolders[$i]}/checkpoint_${model_checkpoint_ids[$i]}.pt
-        fi;    
-    done
-fi;
-model="${model#?}";
-
-
-evals_folder=evals_top${eval_top_k};
-evals_folder=${evals_folder}_${id};
-results_folder=${ROOT_MODEL_FOLDER}/${evals_folder}/${target_domain}/
 
 cd $MOD_FOLDER;
 
