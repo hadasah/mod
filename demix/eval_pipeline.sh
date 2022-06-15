@@ -14,6 +14,7 @@ DEMIX_FOLDER=$7
 
 force_domain_token=$8
 
+eval_tag=$9
 
 # IDS_TO_DOMAINS=('1b' 'anonymized_openwebtext' 'anonymized_realnews' 'anonymized_reviews' 'cs' 'legal' 'med' 'reddit' 'anonymized_latest_news_redo' 'anonymized_tweets_redo' 'anonymized_yelp_reviews_redo' 'cord19-redo' 'github_redo' 'gutenberg' 'legal_contracts' 'qasper');
 
@@ -21,7 +22,7 @@ target_domain=$target_domain_ID
 
 model=${ROOT_MODEL_FOLDER}/${model_folder}/checkpoint_${CHECKPOINT_ID}.pt;
 
-evals_folder=evals
+evals_folder=evals_${eval_tag}
 
 results_path=${ROOT_MODEL_FOLDER}/${model_folder}/${evals_folder}/${target_domain}/test_results.txt
 
@@ -54,7 +55,7 @@ if [[ "$model" == *"domain_token"* ]]; then
                 --batch-size 2  \
                 --eval-domains ${target_domain} \
                 --results-path ${results_path} \
-                --partial-load \
+		--partial-load \
                 --add-domain-token \
                 --force-domain-token $force_domain_token;
     fi;
@@ -83,6 +84,7 @@ else
     --tokens-per-sample 1024     \
     --batch-size 2  \
     --eval-domains ${target_domain} \
-    --results-path ${results_path} \
-	--partial-load
+    --results-path ${results_path}  \
+    --partial-load
+    
 fi

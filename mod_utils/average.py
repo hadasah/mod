@@ -94,7 +94,7 @@ def average_soup(soup, output_dir, weights=None, uniform=False, topk=-1, save_pa
     return averaged_soup
 
 def argmax_soup(soup, weights, output_dir, save_path='checkpoint_last.pt'):
-    merged_expert = experts[int(np.argmax(weights))].copy()
+    merged_expert = soup[int(np.argmax(weights))].copy()
     torch.save(merged_expert, output_dir / save_path)
     
 def evaluate_soup(data, output_dir, save_path='checkpoint_last.pt'):

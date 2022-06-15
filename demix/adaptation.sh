@@ -28,7 +28,16 @@ AVERAGE_WEIGHTS=${13};
 STOP_TIME_HOURS=${14};
 UPDATE_FREQ=${15};
 LR=${16};
-PORT=${17};
+
+RANDOM_JOB_PORT=${17};
+
+declare -A PORTMAP=( ["1b"]=18029 ["cs"]=13365 ["anonymized_realnews"]=62711 ["anonymized_reviews"]=16279 ["anonymized_openwebtext"]=18628 ["med"]=13493 ["reddit"]=51606 ["legal"]=37723 ["cord19-redo"]=27446 ["qasper"]=56775 ["legal_contracts"]=9404 ["github_redo"]=22625 ["gutenberg"]=26581 ["anonymized_latest_news_redo"]=16161 ["anonymized_tweets_redo"]=5261 ["anonymized_yelp_reviews_redo"]=60978 ["Business"]=39568 ["c4"]=27365 ["Sociology"]=25980 ["polisci"]=56025 ["Geology"]=56700 ["materials"]=34434 ["Engineering"]=2435 ["Economics"]=52405 ["Chemistry"]=20252 ["Psychology"]=19438 ["Geography"]=11353 ["C++"]=59095 ["C"]=44430 ["Java"]=5014 ["Mathematics"]=33650 ["Physics"]=42991 ["env_sci"]=45978 ["HTML"]=10421 ["JavaScript"]=19516 ["Biology"]=4345 ["twitter"]=9785 ["stackoverflow"]=4615 ["wikipedia"]=7072 )
+
+declare -A PORTMAPSTEP=( [1000]=100 [20000]=50 [16000]=200 [40000]=300 [56000]=400 )
+
+PORT=$(( PORTMAP[$DOMAIN_ID] + PORTMAPSTEP[${LOAD_FROM_STEP}] + $RANDOM_JOB_PORT ))
+echo $PORT
+
 # name of wandb project to track model output (at wandb.ai)
 WANDB_PROJECT=${18};
 # name of wandb entity 
@@ -53,25 +62,21 @@ valid_subset=valid_${DOMAIN};
 TOKENS_PER_SAMPLE=1024;
 BATCH_SIZE=2;
 LOG_INTERVAL=50;
-KEEP_INTERVAL_UPDATES=1;
+KEEP_INTERVAL_UPDATES=50;
 
 if [[ $ARCH == *"gpt3_small"* ]]; then
      CLIP_NORM=0.1;
      SAVE_INTERVAL_UPDATES=2000;
      VALIDATION_INTERVAL=500;
-     NUM_WARMUP_STEPS=$((${NUM_STEPS} * 8 / 100));
 elif [[ $ARCH == *"gpt3_medium"* ]]; then
-     NUM_WARMUP_STEPS=$((${NUM_STEPS} * 8 / 100));
-     SAVE_INTERVAL_UPDATES=2000;
-     VALIDATION_INTERVAL=500;
+     SAVE_INTERVAL_UPDATES=1000;
+     VALIDATION_INTERVAL=250;
      CLIP_NORM=0.1;
 elif [[ $ARCH == *"gpt3_large"* ]]; then
-     NUM_WARMUP_STEPS=$((${NUM_STEPS} * 8 / 100));
      SAVE_INTERVAL_UPDATES=32000;
      VALIDATION_INTERVAL=500;
      CLIP_NORM=0.1;
 elif [[ $ARCH == *"gpt3_xl"* ]]; then
-     NUM_WARMUP_STEPS=$((${NUM_STEPS} * 8 / 100));
      SAVE_INTERVAL_UPDATES=2000;
      VALIDATION_INTERVAL=500;
      CLIP_NORM=0.1;
@@ -80,7 +85,6 @@ elif [[ $ARCH == *"transformer_lm"* ]]; then
      CLIP_NORM=0.1;
      SAVE_INTERVAL_UPDATES=12000;
      VALIDATION_INTERVAL=6000;
-     NUM_WARMUP_STEPS=$((${NUM_STEPS} * 8 / 100));
 fi;
 
 RESET_PHRASE='';
@@ -91,14 +95,15 @@ read -a reset_vals <<< "$RESET_ITEMS";
 IFS=$OIFS;
 
 if [ $NUM_GPUS \> 1 ]; then
-     DISTRIBUTED_ARGS_PHRASE="--ddp-backend no_c10d --distributed-world-size $NUM_GPUS --distributed-port $PORT";
+      DISTRIBUTED_ARGS_PHRASE="--ddp-backend no_c10d --distributed-world-size $NUM_GPUS --distributed-port $PORT";
 fi;
 if [[ $OLD_DIR != "None" ]]; then
-     NEW_SUBFOLDER_PHRASE='';
-     if [[ $RUN_ID != "" ]]; then
-          NEW_SUBFOLDER_PHRASE="--new-subfolder $RUN_ID ";
-     fi;
-     if [[ $AVERAGE == "True" ]]; then
+      NEW_SUBFOLDER_PHRASE='';
+      if [[ $RUN_ID != "" ]]; then
+           NEW_SUBFOLDER_PHRASE="--new-subfolder $RUN_ID ";
+      fi;
+fi;
+#      if [[ $AVERAGE == "True" ]]; then
 
 #      prior_results_path=${SERIALIZATION_DIR}/average_eval/${DOMAIN_ID}/dev_posteriors.jsonl;
 #      results_path=${SERIALIZATION_DIR}/average_eval/${DOMAIN_ID}/test_results.txt;
@@ -151,21 +156,25 @@ if [[ $OLD_DIR != "None" ]]; then
 #      --distributed-world-size 8;
 #      --distributed-port 12345;
      # alias jq=~/jq-linux64;
-     prior_results_path=/checkpoint/suching/mod/_modular_gpt3_small_80K/modular_gpt3_small_80K_LR\=0.0005/evals_top8_Base_dense_LOAD_FROM_STEP_24000_LR_0.0005/${DOMAIN_ID}/dev_posteriors.jsonl;
-     precomputed_prior=$(tail -n 1 ${prior_results_path} | jq -rc '.exp_avg_posterior | join(",")');
-     python $MOD_FOLDER/mod_utils/average.py --output-dir $SERIALIZATION_DIR/$RUN_ID --weights $precomputed_prior
-     #    --additional-domains c4 Biology wikipedia gutenberg HTML JavaScript twitter stackexchange Java cord19 stackoverflow C C++ Books Physics Mathematics;
-    else
-     python $MOD_FOLDER/mod_utils/mod_checkpoint_utils.py \
+#      prior_results_path=/checkpoint/suching/mod/_modular_gpt3_small_80K/modular_gpt3_small_80K_LR\=0.0005/evals_top8_Base_dense_LOAD_FROM_STEP_24000_LR_0.0005/${DOMAIN_ID}/dev_posteriors.jsonl;
+#      precomputed_prior=$(tail -n 1 ${prior_results_path} | jq -rc '.exp_avg_posterior | join(",")');
+#      python $MOD_FOLDER/mod_utils/average.py --output-dir $SERIALIZATION_DIR/$RUN_ID --weights $precomputed_prior
+#      #    --additional-domains c4 Biology wikipedia gutenberg HTML JavaScript twitter stackexchange Java cord19 stackoverflow C C++ Books Physics Mathematics;
+#     else
+     
+#     fi;
+# fi;
+
+
+python $MOD_FOLDER/mod_utils/mod_checkpoint_utils.py \
           --old-folder $OLD_DIR \
           --new-folder $SERIALIZATION_DIR \
-          --subfolder $SUBFOLDER_NAME \
+          --subfolder "DOMAINID=${DOMAIN_ID}" \
           $NEW_SUBFOLDER_PHRASE \
           --load-from-step -1 \
           --domain-id $DOMAIN_ID;
-    fi;
-fi;
 
+          
 if [[ $RESET_ITEMS != "None" ]]; then
      for item in "${reset_vals[@]}"; do
           RESET_PHRASE="${RESET_PHRASE}--reset-${item} "

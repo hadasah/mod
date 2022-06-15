@@ -30,9 +30,13 @@ only_use_expert=${14}
 
 arch=${15}
 
-MOD_FOLDER=${16}
+output_folder=${16}
 
-jq_path=${17}
+MOD_FOLDER=${17}
+
+jq_path=${18}
+
+estimate_posterior_only=${19}
 
 echo $model_type
 OIFS=$IFS;
@@ -94,10 +98,14 @@ if [[ "$generalist_model" != "None" ]]; then
 fi;
 evals_folder=${evals_folder}_${id};
 
-prior_results_path=${ROOT_MODEL_FOLDER}/${evals_folder}/${target_domain}/dev_posteriors.jsonl;
-results_path=${ROOT_MODEL_FOLDER}/${evals_folder}/${target_domain}/test_results.txt;
+if [[ "$output_folder" == "None" ]]; then
+    output_folder=$ROOT_MODEL_FOLDER;
+fi;
 
-mkdir -p ${ROOT_MODEL_FOLDER}/${evals_folder}/${target_domain};
+prior_results_path=${output_folder}/${evals_folder}/${target_domain}/dev_posteriors.jsonl;
+results_path=${output_folder}/${evals_folder}/${target_domain}/test_results.txt;
+
+mkdir -p ${output_folder}/${evals_folder}/${target_domain};
 cd $MOD_FOLDER;
 # echo $results_path;
 echo $model;
@@ -145,37 +153,40 @@ precomputed_prior=$(tail -n 1 ${prior_results_path} | ${jq_path} -rc '.exp_avg_p
 echo $precomputed_prior;
 
 target_eval_split=test_${target_domain};
- python -u fairseq_cli/ensemble_eval_lm.py $data_path \
---path $model \
---gen-subset $target_eval_split \
---target-domain train_${target_domain} \
---target-eval ${target_eval_split} \
---task multidomain_language_modeling \
---sample-break-mode none \
---tokens-per-sample 1024      \
---batch-size 2  \
---optimizer adafactor \
---sample-break-mode none     \
---log-format simple     \
---log-interval 50     \
---skip-invalid-size-inputs-valid-test               \
---criterion cross_entropy     \
---lr 5e-4        \
---weight-decay 0.1     \
---update-freq 1 \
---clip-norm 0.0     \
---no-save           \
---bucket-cap-mb 200                       \
---ddp-backend no_c10d      \
---arch transformer_lm                 \
---train-domains ${target_domain} \
---eval-domains ${target_domain} \
---log-format tqdm \
---train-subset train_${target_domain} \
---partial-load \
---results-path ${results_path} \
---ensemble-type ${ensemble_type} \
---precomputed-prior ${precomputed_prior} \
---eval-topk ${eval_top_k} \
---distributed-world-size $num_gpus \
---distributed-port 12345 ;
+
+if [[ "$estimate_posterior_only" == "False" ]]; then
+    python -u fairseq_cli/ensemble_eval_lm.py $data_path \
+    --path $model \
+    --gen-subset $target_eval_split \
+    --target-domain train_${target_domain} \
+    --target-eval ${target_eval_split} \
+    --task multidomain_language_modeling \
+    --sample-break-mode none \
+    --tokens-per-sample 1024      \
+    --batch-size 2  \
+    --optimizer adafactor \
+    --sample-break-mode none     \
+    --log-format simple     \
+    --log-interval 50     \
+    --skip-invalid-size-inputs-valid-test               \
+    --criterion cross_entropy     \
+    --lr 5e-4        \
+    --weight-decay 0.1     \
+    --update-freq 1 \
+    --clip-norm 0.0     \
+    --no-save           \
+    --bucket-cap-mb 200                       \
+    --ddp-backend no_c10d      \
+    --arch transformer_lm                 \
+    --train-domains ${target_domain} \
+    --eval-domains ${target_domain} \
+    --log-format tqdm \
+    --train-subset train_${target_domain} \
+    --partial-load \
+    --results-path ${results_path} \
+    --ensemble-type ${ensemble_type} \
+    --precomputed-prior ${precomputed_prior} \
+    --eval-topk ${eval_top_k} \
+    --distributed-world-size $num_gpus \
+    --distributed-port 12345 ;
+fi;

@@ -904,6 +904,9 @@ class CommonEvalConfig(FairseqDataclass):
             "help": "a dictionary used to override model args at generation that were used during model training"
         },
     )
+    best_average_output_dir: Optional[str] = field(
+            default=None, metadata={"help": "for averaging, path to save output"}
+    )
     results_path: Optional[str] = field(
         default=None, metadata={"help": "path to save eval results (optional)"}
     )

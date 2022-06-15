@@ -6,9 +6,10 @@ import os
 import argparse
 import numpy as np
 from pathlib import Path
+import re
 
 
-def main(model, debug=False, dry_mode=False, from_scratch=False, domains=None, data_bin=None, load_from_step=-1, average=False, average_weights=None):
+def main(model, domains, debug=False, dry_mode=False, from_scratch=False, data_bin=None, load_from_step=-1, average=False, average_weights=None):
     DEBUG_MODE = debug
     DRY_MODE = dry_mode
     FROM_SCRATCH = from_scratch
@@ -28,30 +29,25 @@ def main(model, debug=False, dry_mode=False, from_scratch=False, domains=None, d
 
 
     name_keys = ["MODEL",  "LOAD_FROM_STEP", "RESET_ITEMS", "LR", "UPDATE_FREQ", "DOMAIN_ID", "AVERAGE", "NUM_STEPS"]
-    from slurm_jobs.model_specs import SPECS
+    from slurm_jobs.model_specs import SPECS, EVAL_FOLDERS
     SPECS = SPECS[MODEL]
     NUM_GPUS = SPECS['NUM_MOD_GPUS']
 
     NUM_NODES = 1 if NUM_GPUS < 8 else NUM_GPUS // 8
 
     # modify to path to dense checkpoint you want to use
-    PATH_TO_DENSE_CHECKPOINTS = f'/checkpoint/suching/mod/_modular_gpt3_small_80K/modular_gpt3_small_80K_LR\=0.0005/MODEL=transformerlmgpt3small_DOMAINID=1_LOADFROMSTEP=24000_RESETITEMS=dataloader_UPDATEFREQ=32_LR=0.0005/'
+    PATH_TO_DENSE_CHECKPOINTS = Path(EVAL_FOLDERS[MODEL]["average"]) / f"_LOAD_FROM_STEP_{load_from_step}/"
     NEW_MODEL_TOP_FOLDER = f'/checkpoint/suching/mod/_adaptation_{MODEL}/adaptation_{MODEL}_LR={SPECS["LR"]}/'
 
-    re_string = ''
-    if not domains:
-        DOMAINS = [i for i in range(8)]
-    else:
-        DOMAINS = domains
-
-    if average_weights:
-        average_weights = average_weights
-    else:
-        average_weights = None
-    if average:
-        average = "True"
-    else:
-        average = "False"
+    # re_string = ''
+    # WANTED_FOLDER_REGEX=f"DOMAINID\={domain}"
+    # regex = re.compile(WANTED_FOLDER_REGEX)
+    # all_runs = os.listdir(PATH_TO_DENSE_CHECKPOINTS)
+    # print(all_runs)
+    # assert False
+    # selected_folders = [folder for folder in all_runs if regex.match(folder)]
+    # print(selected_folders)
+    
     grids = {
         SWEEP_NAME: {
             'fixed_args': '',
@@ -59,20 +55,20 @@ def main(model, debug=False, dry_mode=False, from_scratch=False, domains=None, d
                 "NUM_GPUS": [NUM_GPUS],
                 "MODEL": [MODEL],
                 "DATA_BIN": [DATA_BIN],
-                "DOMAIN_ID": DOMAINS,
+                "DOMAIN_ID": domains,
                 "PARAMS_TO_FREEZE": ["None"],
-                "COPYING_MODEL_FOLDER": [PATH_TO_DENSE_CHECKPOINTS],
+                "COPYING_MODEL_FOLDER": [str(PATH_TO_DENSE_CHECKPOINTS)],
                 "NEW_MODEL_TOP_FOLDER": [NEW_MODEL_TOP_FOLDER],
-                "CHECKPOINTS_SUBFOLDER": '.',
+                "CHECKPOINTS_SUBFOLDER": ".",
                 "LOAD_FROM_STEP": [-1],
-                "RESET_ITEMS": ['meters,dataloader,optimizer,lr-scheduler'],
-                "NUM_STEPS": [30000],
+                "RESET_ITEMS": ['optimizer,meters,lr-scheduler,dataloader'],
+                "NUM_STEPS": [SPECS["NUM_STEPS"] // 2],
                 "AVERAGE": [average],
                 "AVERAGE_WEIGHTS": [average_weights],
-                "STOP_TIME_HOURS": [75],
+                "STOP_TIME_HOURS": [SPECS["TRAIN_HOURS"] + SPECS["TRAIN_HOURS"] // 2],
                 "UPDATE_FREQ": [SPECS['UF']],
-                "LR": [SPECS['LR'] * .1],
-                "PORT": [np.random.randint(1024, 65535)],
+                "LR": [SPECS['LR'] * 0.1],
+                "RANDOM_JOB_PORT": [np.random.randint(5,100)],
                 "WANDB_PROJECT": ['mod_test'],
                 "WANDB_ENTITY": ['scaling-demix'],
                 "MOD_FOLDER": [MOD_FOLDER]
@@ -110,12 +106,11 @@ if __name__ == '__main__':
     parser.add_argument('--debug', action='store_true')
     parser.add_argument('--dry-mode', action='store_true')
     parser.add_argument('--model', type=str)
-    parser.add_argument('--domains', type=str, nargs="+")
+    parser.add_argument('--domains', type=str, nargs='+')
+    # parser.add_argument('--target-domain', type=str)
     parser.add_argument('--load-from-step', type=int, default=-1)
     parser.add_argument('--from-scratch', action='store_true')
-    parser.add_argument('--average', action='store_true')
-    parser.add_argument('--average-weights', type=str)
     parser.add_argument('--data-bin', type=str)
 
     args = parser.parse_args()
-    main(args.model, args.debug, args.dry_mode, args.from_scratch, args.domains, args.data_bin, args.load_from_step, args.average, args.average_weights)
+    main(args.model, args.domains, args.debug, args.dry_mode, args.from_scratch, args.data_bin, args.load_from_step)

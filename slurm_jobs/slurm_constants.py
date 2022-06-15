@@ -22,7 +22,7 @@ CONSTANTS = {
         "LOG_FOLDER": '/checkpoint/suching/mod_publication/',
         "JQ_PATH":'jq',
         "SLURM_ACCOUNT": "fairusers",
-        "SLURM_PARTITION": "devlab,learnlab",
+        "SLURM_PARTITION": "devlab,learnlab,scavenge",
         "CONDA_ENV": 'mod',
         "NUM_CPUS": 10,
         "MEM_GB": 480,

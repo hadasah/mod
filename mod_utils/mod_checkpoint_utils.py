@@ -33,7 +33,7 @@ def main(CHECKPOINTS_TOP_FOLDER, NEW_MODEL_TOP_FOLDER, subfolder, new_subfolder,
     # )
     # if not is_master_process:
     #     return
-    distributed_rank = int(os.environ['SLURM_PROCID'])
+    distributed_rank = int(os.environ['SLURM_PROCID']) if torch.distributed.is_initialized() else 0
     if distributed_rank != 0:
         return
     if not new_subfolder:

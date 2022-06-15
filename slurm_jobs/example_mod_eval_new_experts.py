@@ -6,7 +6,7 @@ import argparse
 from slurm_jobs.model_specs import EVAL_FOLDERS
 from pathlib import Path
 
-def main(model, load_from_step, original_domains, additional_domains, evaluation_domains, data_bin=None, debug=False, dry_mode=False):
+def main(model, load_from_step, original_domains, additional_domains, evaluation_domains, data_bin=None, debug=False, dry_mode=False, output_dir="None", estimate_posterior_only=False):
     username = os.getlogin()
     if username not in CONSTANTS:
         raise Error("username isn't defined in slurm_constants file")
@@ -42,7 +42,8 @@ def main(model, load_from_step, original_domains, additional_domains, evaluation
     EVAL_FOLDER_ID = f'Base_dense_mod_LOAD_FROM_STEP_{load_from_step}_with_new_experts'
     # Comma separated list of the checkpoint IDs. 
     #Unfortunately this can't be set per job, I'm assuming we're always setting the right # updates
-    CHECKPOINT_IDS = 'last,last,last,last,last,last,last,last,last,last,last,last,last,last,last,last,last,last,last,last,last,last,last,last,last,last,last,last,last,last,last'
+    CHECKPOINT_IDS = ",".join(['last'] * NUM_EXPERTS)
+    print(CHECKPOINT_IDS)
     EVAL_SCRIPT = f'{MOD_FOLDER}/demix/mix_eval_pipeline_1.sh' if MODEL_TYPE in ['demix', 'modular'] else f'{MOD_FOLDER}/demix/eval_pipeline.sh'
     # all_runs = os.listdir("/checkpoint/suching/mod/_modular_transformer_lm_gpt3_medium/modular_transformer_lm_gpt3_medium_LR=0.0005/")
     # regex = re.compile(WANTED_FOLDER_REGEX)
@@ -59,6 +60,7 @@ def main(model, load_from_step, original_domains, additional_domains, evaluation
     # elif model == 'transformer_lm_gpt3_medium':
     #     ROOT_MODEL_FOLDER = "/checkpoint/suching/mod/_modular_transformer_lm_gpt3_medium/modular_transformer_lm_gpt3_medium_LR=0.0005/"
     print(additional_domains)
+    estimate_posterior_only = "True" if estimate_posterior_only else "False"
     grids = {
         SWEEP_NAME: {
             'fixed_args': '',
@@ -82,8 +84,10 @@ def main(model, load_from_step, original_domains, additional_domains, evaluation
                 "EXCLUDE_EXPERT": ["False"],
                 "ONLY_USE_DOMAIN_EXPERT": ['False'],
                 "MODEL": [model],
+                "OUTPUT_DIR": [output_dir],
                 "MOD_FOLDER": [MOD_FOLDER],
-                "JQ_PATH": [JQ_PATH]
+                "JQ_PATH": [JQ_PATH],
+                "ESTIMATE_POSTERIOR_ONLY": [estimate_posterior_only]
             },
             'named_args': {},
         },
@@ -119,10 +123,14 @@ if __name__ == '__main__':
     parser.add_argument('--debug', action='store_true')
     parser.add_argument('--dry-mode', action='store_true')
     parser.add_argument('--model', type=str)
-    parser.add_argument('--original-domains', type=str)
-    parser.add_argument('--additional-domains', type=str)
+    parser.add_argument('--original-domains', type=str, nargs='+')
+    parser.add_argument('--additional-domains', type=str, nargs='+')
     parser.add_argument('--evaluation-domains', type=str, nargs="+")
     parser.add_argument('--load-from-step', type=int)
     parser.add_argument('--data-bin', type=str)
+    parser.add_argument('--output-dir', type=str, default="None")
+    parser.add_argument('--estimate-posterior-only', action='store_true')
+
     args = parser.parse_args()
-    main(args.model,  args.load_from_step, args.original_domains, args.additional_domains, args.evaluation_domains, args.data_bin, args.debug, args.dry_mode)
+
+    main(args.model,  args.load_from_step, ','.join(args.original_domains), ','.join(args.additional_domains), args.evaluation_domains, args.data_bin, args.debug, args.dry_mode, args.output_dir, args.estimate_posterior_only)

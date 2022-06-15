@@ -6,7 +6,7 @@ from slurm_jobs.model_specs import EVAL_FOLDERS
 import argparse
 from pathlib import Path
 
-def main(model, domains, path_to_model=None, path_to_model_dir=None, model_regex=None, data_bin=None, debug=False, dry_mode=False, tag=None):
+def main(model, domains, path_to_model=None, path_to_model_dir=None, model_regex=None, data_bin=None, debug=False, dry_mode=False, tag=None, eval_tag=None):
 
     DEBUG_MODE = debug
     DRY_MODE = dry_mode
@@ -24,11 +24,11 @@ def main(model, domains, path_to_model=None, path_to_model_dir=None, model_regex
 
     if path_to_model is not None:
         MODEL_FOLDER = path_to_model
-        SWEEP_NAME = f"eval_sweep_average"
+        SWEEP_NAME = f"eval_sweep_average_{eval_tag}"
         selected_folders = "."
     elif path_to_model_dir is not None:
         MODEL_FOLDER = path_to_model_dir
-        SWEEP_NAME = f"eval_sweep_average"
+        SWEEP_NAME = f"eval_sweep_average_{eval_tag}"
         all_runs = os.listdir(MODEL_FOLDER)
         regex = re.compile(model_regex)
         selected_folders = [folder for folder in all_runs if regex.match(folder)]
@@ -37,7 +37,7 @@ def main(model, domains, path_to_model=None, path_to_model_dir=None, model_regex
         if not tag:
             tag = 'dense'
         MODEL=model
-        SWEEP_NAME = f"eval_sweep_{MODEL}_{tag}"
+        SWEEP_NAME = f"eval_sweep_{MODEL}_{tag}_{eval_tag}"
         EVAL_FOLDER = EVAL_FOLDERS[MODEL]
         MODEL_FOLDER = EVAL_FOLDER[tag]
         selected_folders = "."
@@ -82,6 +82,8 @@ def main(model, domains, path_to_model=None, path_to_model_dir=None, model_regex
                 "SPLIT": ['test'],
                 "DOMAIN_ID": domains,
                 "MOD_FOLDER": [MOD_FOLDER],
+                "FORCE_DOMAIN_TOKEN": ["FALSE"],
+                "EVAL_TAG": [eval_tag]
             },
             'named_args': {},
         },
@@ -132,8 +134,9 @@ if __name__ == '__main__':
     parser.add_argument('--model-regex', type=str)
     parser.add_argument('--model', type=str)
     parser.add_argument('--tag', type=str, default=None)
+    parser.add_argument('--eval-tag', type=str, default=None)
     parser.add_argument('--domains', type=str, nargs="+")
     parser.add_argument('--data-bin', type=str)
     args = parser.parse_args()
-    main(args.model,   args.domains, args.path_to_model, args.path_to_model_dir, args.model_regex, args.data_bin, args.debug, args.dry_mode, args.tag)
+    main(args.model,   args.domains, args.path_to_model, args.path_to_model_dir, args.model_regex, args.data_bin, args.debug, args.dry_mode, args.tag, args.eval_tag)
 
