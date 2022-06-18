@@ -22,7 +22,7 @@ def main(model, load_from_step, original_domains, additional_domains, evaluation
     DRY_MODE = dry_mode
     name_keys = []
     NUM_GPUS = 8
-    NUM_EXPERTS = 32
+    NUM_EXPERTS = len(original_domains.split(",")) + len(additional_domains.split(","))
     NUM_NODES = NUM_EXPERTS // NUM_GPUS
     # make sure all specified domains exist in data-bin folder
     if not all([Path(DATA_BIN) / x in Path(DATA_BIN).glob("*/") for x in evaluation_domains]):
@@ -65,7 +65,7 @@ def main(model, load_from_step, original_domains, additional_domains, evaluation
         SWEEP_NAME: {
             'fixed_args': '',
             'positional_args': {
-                "NUM_GPUS": [NUM_GPUS],
+                "NUM_GPUS": [NUM_GPUS * NUM_NODES],
                 "NUM_NODES": [NUM_NODES],
                 "DATA_BIN": [DATA_BIN],
                 "ROOT_MODEL_FOLDER": [ROOT_MODEL_FOLDER],
@@ -78,7 +78,7 @@ def main(model, load_from_step, original_domains, additional_domains, evaluation
                 "MODEL_TYPE": [MODEL_TYPE],
                 # "GENERALIST_MODEL": ["/checkpoint/suching/margaret_sweep_rerun/small/_EXPERIMENT=dense_NUMSTEPS=36000_LR=0.001/checkpoint_1_30000.pt"],
                 "GENERALIST_MODEL": ["None"],
-                "TOP_K": [32],
+                "TOP_K": [NUM_EXPERTS],
                 "EVAL_FOLDER_ID": [EVAL_FOLDER_ID],
                 "LOAD_FROM_STEP": [load_from_step],
                 "EXCLUDE_EXPERT": ["False"],

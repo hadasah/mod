@@ -7,7 +7,7 @@ import argparse
 from slurm_jobs.model_specs import EVAL_FOLDERS
 from pathlib import Path
 
-def main(model, load_from_step, evaluation_domains, additional_domains=None, data_bin=None, debug=False, dry_mode=False, dev_posteriors_dir=None):
+def main(model, load_from_step, evaluation_domains, additional_domains=None, data_bin=None, debug=False, dry_mode=False, dev_posteriors_dir=None,output_dir=None):
     username = os.getlogin()
     if username not in CONSTANTS:
         raise Error("username isn't defined in slurm_constants file")
@@ -42,7 +42,7 @@ def main(model, load_from_step, evaluation_domains, additional_domains=None, dat
     EVAL_FOLDER_ID = f'Base_average_mod_LR_0.0005'
     # Comma separated list of the checkpoint IDs. 
     #Unfortunately this can't be set per job, I'm assuming we're always setting the right # updates
-    CHECKPOINT_IDS = ",".join(['last'] * (len(additional_domains.split(',')) + 8))
+    CHECKPOINT_IDS = ",".join(['last'] * (len(additional_domains.split(',') if additional_domains else []) + 8))
     EVAL_SCRIPT = f'{MOD_FOLDER}/demix/average_eval_pipeline.sh' if MODEL_TYPE in ['demix', 'modular'] else f'{MOD_FOLDER}/demix/eval_pipeline.sh'
     # all_runs = os.listdir("/checkpoint/suching/mod/_modular_transformer_lm_gpt3_medium/modular_transformer_lm_gpt3_medium_LR=0.0005/")
     # regex = re.compile(WANTED_FOLDER_REGEX)
@@ -60,6 +60,8 @@ def main(model, load_from_step, evaluation_domains, additional_domains=None, dat
     #     ROOT_MODEL_FOLDER = "/checkpoint/suching/mod/_modular_transformer_lm_gpt3_medium/modular_transformer_lm_gpt3_medium_LR=0.0005/"
     if not dev_posteriors_dir:
         dev_posteriors_dir = f"{ROOT_MODEL_FOLDER}/evals_top8_Base_dense_LOAD_FROM_STEP_${load_from_step}_LR_0.0005/"
+    if not output_dir:
+        output_dir = f"/checkpoint/suching/mod/average_{model}"
 
     grids = {
         SWEEP_NAME: {
@@ -81,7 +83,7 @@ def main(model, load_from_step, evaluation_domains, additional_domains=None, dat
                 "EXCLUDE_EXPERT": ["False"],
                 "ONLY_USE_DOMAIN_EXPERT": ['False'],
                 "MODEL": [model],
-                "OUTPUT_DIR": [f"/checkpoint/suching/mod/average_{model}/"],
+                "OUTPUT_DIR": [output_dir],
                 "MOD_FOLDER": [MOD_FOLDER],
                 "JQ_PATH": [JQ_PATH],
                 "RANDOM_JOB_PORT": [np.random.randint(5,100)],
@@ -128,5 +130,6 @@ if __name__ == '__main__':
     parser.add_argument('--load-from-step', type=int, nargs="+")
     parser.add_argument('--data-bin', type=str)
     parser.add_argument('--dev-posteriors-dir', type=str)
+    parser.add_argument('--output-dir', type=str)
     args = parser.parse_args()
-    main(args.model,  args.load_from_step, args.evaluation_domains, ",".join(args.additional_domains), args.data_bin, args.debug, args.dry_mode, args.dev_posteriors_dir)
+    main(args.model,  args.load_from_step, args.evaluation_domains, ",".join(args.additional_domains) if args.additional_domains else None, args.data_bin, args.debug, args.dry_mode, args.dev_posteriors_dir, args.output_dir)

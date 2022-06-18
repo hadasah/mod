@@ -2,11 +2,11 @@ from slurm_jobs.slurm_job import run_grid
 import os
 import re
 from slurm_jobs.slurm_constants import *
-from slurm_jobs.model_specs import EVAL_FOLDERS
+from slurm_jobs.model_specs import EVAL_FOLDERS, DOMAINS
 import argparse
 from pathlib import Path
 
-def main(model, domains, path_to_model=None, path_to_model_dir=None, model_regex=None, data_bin=None, debug=False, dry_mode=False, tag=None, eval_tag=None):
+def main(model, domains, path_to_model=None, path_to_model_dir=None, checkpoint_id=None, model_regex=None, data_bin=None, debug=False, dry_mode=False, tag=None, eval_tag="", output_dir=None):
 
     DEBUG_MODE = debug
     DRY_MODE = dry_mode
@@ -42,6 +42,8 @@ def main(model, domains, path_to_model=None, path_to_model_dir=None, model_regex
         MODEL_FOLDER = EVAL_FOLDER[tag]
         selected_folders = "."
 
+    if domains[0] in DOMAINS.keys():
+        domains = DOMAINS[domains[0]]
     if data_bin:
         DATA_BIN = data_bin
     else:
@@ -64,7 +66,7 @@ def main(model, domains, path_to_model=None, path_to_model_dir=None, model_regex
     EVAL_FOLDER_ID = 'Base_dense'
     # Comma separated list of the checkpoint IDs. 
     #Unfortunately this can't be set per job, I'm assuming we're always setting the right # updates
-    CHECKPOINT_ID = 'last'
+    CHECKPOINT_ID = checkpoint_id or 'last'
 
     EVAL_SCRIPT = f'{MOD_FOLDER}/demix/mix_eval_pipeline.sh' if MODEL_TYPE in ['demix', 'modular'] else f'{MOD_FOLDER}/demix/eval_pipeline.sh'
     # all_runs = os.listdir(MODEL_FOLDER)
@@ -83,7 +85,8 @@ def main(model, domains, path_to_model=None, path_to_model_dir=None, model_regex
                 "DOMAIN_ID": domains,
                 "MOD_FOLDER": [MOD_FOLDER],
                 "FORCE_DOMAIN_TOKEN": ["FALSE"],
-                "EVAL_TAG": [eval_tag]
+                "EVAL_TAG": [eval_tag],
+                "OUTPUT_DIR": [output_dir]
             },
             'named_args': {},
         },
@@ -132,11 +135,13 @@ if __name__ == '__main__':
     parser.add_argument('--path-to-model', type=str)
     parser.add_argument('--path-to-model-dir', type=str)
     parser.add_argument('--model-regex', type=str)
+    parser.add_argument('--checkpoint-id', type=str)
     parser.add_argument('--model', type=str)
     parser.add_argument('--tag', type=str, default=None)
     parser.add_argument('--eval-tag', type=str, default=None)
     parser.add_argument('--domains', type=str, nargs="+")
     parser.add_argument('--data-bin', type=str)
+    parser.add_argument('--output-dir', type=str)
     args = parser.parse_args()
-    main(args.model,   args.domains, args.path_to_model, args.path_to_model_dir, args.model_regex, args.data_bin, args.debug, args.dry_mode, args.tag, args.eval_tag)
+    main(args.model,   args.domains, args.path_to_model, args.path_to_model_dir, args.checkpoint_id, args.model_regex, args.data_bin, args.debug, args.dry_mode, args.tag, args.eval_tag,args.output_dir)
 

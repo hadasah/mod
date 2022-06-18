@@ -7,7 +7,7 @@ from typing import Iterator, Iterable, TypeVar, List
 from itertools import islice
 import torch
 from tqdm.auto import tqdm
-from transformers import AutoModel, AutoTokenizer, OPTForCausalLM
+from transformers import AutoModel, AutoModelForCausalLM, AutoTokenizer, OPTForCausalLM
 import submitit
 import numpy as np
 import pandas as pd
@@ -70,7 +70,7 @@ def predict_json(predictor, batch_data):
 def extract(input_df, output_file, model_path, batch_size, submitit=False):
     if submitit:
         job_env = submitit.JobEnvironment()
-    model = OPTForCausalLM.from_pretrained(model_path)
+    model = AutoModelForCausalLM.from_pretrained(model_path)
     if submitit:
         model = model.cuda(job_env.global_rank)
     else:
@@ -79,18 +79,15 @@ def extract(input_df, output_file, model_path, batch_size, submitit=False):
 
     tokenizer.pad_token = tokenizer.eos_token
     df_length = input_df.shape[0]
-    if os.path.exists(output_file):
-        ids_already_done, vectors_already_done = torch.load(output_file)
-    else:
-        ids_already_done = torch.IntTensor()
-        vectors_already_done = torch.FloatTensor()
     df_iterator = lazy_groups_of(input_df.to_dict(orient='records'), batch_size)
     ppls = []
     for batch_json in tqdm(df_iterator,
                             total=df_length // batch_size):
         lines = [x['text'].replace('<|endoftext|>', '</s>') for x in batch_json if x['text'] and x['text'] != '\n']
+        if not lines:
+            continue
 
-        input_ids = tokenizer.batch_encode_plus(lines, padding='max_length', truncation=True, max_length=2048, return_tensors='pt')
+        input_ids = tokenizer.batch_encode_plus(lines, padding='max_length', truncation=True, max_length=1024, return_tensors='pt')
         #last_non_masked_idx = torch.sum(input_ids['attention_mask'], dim=1) - 1
         # last_non_masked_idx = last_non_masked_idx.view(-1, 1).repeat(1, 768).unsqueeze(1).cuda()
         input_ids = input_ids.to(model.device)

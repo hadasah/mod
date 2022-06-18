@@ -102,7 +102,7 @@ elif [[ "$model_type" == "modular" ]]; then
         fi;    
     done
 
-    for i in $(seq 0 24); do
+    for i in $(seq 0 7); do
         if ([[ "$exclude_expert" != "True" ]] || [[ "$i" != "$target_domain_ID" ]])  && ([[ "$only_use_expert" != "True" ]] || [[ "$i" == "$target_domain_ID" ]]) && [[ "${model_checkpoint_ids[$i]}" != "None" ]]; then
             # /checkpoint/suching/suchin_mod/small/_EXPERIMENT\=dense_NUMSTEPS\=36000_LR\=0.001/_DOMAIN_3_MOD_STEPS_30000_PHASE1_DENSE
             #model=${model}:${ROOT_MODEL_FOLDER}/${MODEL_FOLDER}/_DOMAIN_${i}_MOD_STEPS_${num_steps}_PHASE1_DENSE/checkpoint_last.pt
@@ -187,7 +187,7 @@ target_eval_split=valid_${target_domain};
 --ensemble-type "updating_prior" \
 --results-path ${prior_results_path} \
 --max-samples 100 \
---distributed-world-size 32 \
+--distributed-world-size $num_gpus \
 --distributed-port 12345;
 
 # alias jq=~/jq-linux64;
@@ -230,6 +230,6 @@ if [[ "$estimate_posterior_only" == "False" ]]; then
     --ensemble-type ${ensemble_type} \
     --precomputed-prior ${precomputed_prior} \
     --eval-topk ${eval_top_k} \
-    --distributed-world-size 32 \
+    --distributed-world-size $num_gpus \
     --distributed-port 12345 ;
 fi;

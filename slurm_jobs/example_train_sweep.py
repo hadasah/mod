@@ -6,7 +6,7 @@ import numpy as np
 from pathlib import Path
 
 
-def main(model, experiment, domains, data_bin, debug=False, dry_mode=False):
+def main(model, experiment, domains, data_bin, debug=False, dry_mode=False, id_=''):
     DEBUG_MODE = debug
     DRY_MODE = dry_mode
     MODEL = model
@@ -27,7 +27,7 @@ def main(model, experiment, domains, data_bin, debug=False, dry_mode=False):
     NUM_NODES = SPECS['NUM_GPUS'] // 8
     SWEEP_NAME = f"sweep_{MODEL}_{SPECS['NUM_GPUS']}_GPUs"
     
-    name_keys = ["EXPERIMENT", "NUM_STEPS", "UPDATE_FREQ", "LR", "NUM_GPUS"]
+    name_keys = ["EXPERIMENT", "MODEL", "STOP_TIME_HOURS", "NUM_STEPS", "UPDATE_FREQ", "LR", "NUM_GPUS", "ID"]
     
     if not all([Path(DATA_BIN) / x in Path(DATA_BIN).glob("*/") for x in domains]):
         print([Path(DATA_BIN) / x for x in domains if Path(DATA_BIN) / x not in Path(DATA_BIN).glob("*/")])
@@ -54,7 +54,7 @@ def main(model, experiment, domains, data_bin, debug=False, dry_mode=False):
                 "WANDB_PROJECT": ['publication-test'],
                 "WANDB_ENTITY": ['scaling-demix'],
                 "MOD_FOLDER": [MOD_FOLDER],
-                "ID": [""]
+                "ID": [id_]
             },
             'named_args': {},
         },
@@ -88,8 +88,10 @@ if __name__ == '__main__':
     parser.add_argument('--debug', action='store_true')
     parser.add_argument('--dry-mode', action='store_true')
     parser.add_argument('--model', type=str)
+    parser.add_argument('--id', type=str)
     parser.add_argument('--domains', type=str, nargs="+")
     parser.add_argument('--data-bin', type=str, default='/private/home/suching/raw_data/data-bin-big/')
+
     parser.add_argument('--experiment', type=str)
     args = parser.parse_args()
-    main(args.model, args.experiment, args.domains, args.data_bin, args.debug, args.dry_mode)
+    main(args.model, args.experiment, args.domains, args.data_bin, args.debug, args.dry_mode, args.id)

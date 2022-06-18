@@ -16,6 +16,8 @@ force_domain_token=$8
 
 eval_tag=$9
 
+output_dir=${10}
+
 # IDS_TO_DOMAINS=('1b' 'anonymized_openwebtext' 'anonymized_realnews' 'anonymized_reviews' 'cs' 'legal' 'med' 'reddit' 'anonymized_latest_news_redo' 'anonymized_tweets_redo' 'anonymized_yelp_reviews_redo' 'cord19-redo' 'github_redo' 'gutenberg' 'legal_contracts' 'qasper');
 
 target_domain=$target_domain_ID
@@ -24,9 +26,12 @@ model=${ROOT_MODEL_FOLDER}/${model_folder}/checkpoint_${CHECKPOINT_ID}.pt;
 
 evals_folder=evals_${eval_tag}
 
-results_path=${ROOT_MODEL_FOLDER}/${model_folder}/${evals_folder}/${target_domain}/test_results.txt
+if [[ $output_dir == "None" ]]; then
+	output_dir=${ROOT_MODEL_FOLDER};
+fi
+results_path=${output_dir}/${model_folder}/${evals_folder}/${target_domain}/test_results.txt
 
-mkdir -p ${ROOT_MODEL_FOLDER}/${model_folder}/${evals_folder}/${target_domain};
+mkdir -p ${output_dir}/${model_folder}/${evals_folder}/${target_domain};
 cd $DEMIX_FOLDER;
 
 if [[ "$model" == *"domain_token"* ]]; then
