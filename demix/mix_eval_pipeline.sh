@@ -39,11 +39,19 @@ jq_path=${18}
 estimate_posterior_only=${19}
 
 echo $model_type
-OIFS=$IFS;
-IFS=','
-read -a model_checkpoint_ids <<< "$CHECKPOINT_IDS";
-IFS=$OIFS;
 
+
+if [[ "$model_type" != "demix" ]]; then
+
+    OIFS=$IFS;
+    IFS=','
+    read -a model_checkpoint_ids <<< "$CHECKPOINT_IDS";
+    IFS=$OIFS;
+
+else model_checkpoint_ids=$CHECKPOINT_IDS;
+fi;
+
+echo $CHECKPOINT_IDS
 # IDS_TO_DOMAINS=('1b' 'anonymized_openwebtext' 'anonymized_realnews' 'anonymized_reviews' 'cs' 'legal' 'med' 'reddit' 'anonymized_latest_news_redo' 'anonymized_tweets_redo' 'anonymized_yelp_reviews_redo' 'cord19-redo' 'github_redo' 'gutenberg' 'legal_contracts' 'qasper');
 
 target_domain=$target_domain_ID
@@ -51,9 +59,12 @@ target_domain=$target_domain_ID
 model=;
 
 if [[ "$model_type" == "demix" ]]; then
-    for i in $(seq 0 8 63); do
+    number_experts=32;
+    top=$(($number_experts - 1))
+    interval=$(($number_experts / 8))
+    for i in $(seq 0 $interval $top); do
         if ([[ "$exclude_expert" != "True" ]] || [[ "$i" != "$target_domain_ID" ]]) && ([[ "$only_use_expert" != "True" ]] || [[ "$i" == "$target_domain_ID" ]]) && [[ "${model_checkpoint_ids[$i]}" != "None" ]]; then
-            model=${model}:${ROOT_MODEL_FOLDER}/${MODEL_FOLDER}/checkpoint_best-rank-${i}.pt; 
+            model=${model}:${ROOT_MODEL_FOLDER}/${MODEL_FOLDER}/checkpoint_${model_checkpoint_ids}-rank-${i}.pt; 
         fi;
     done
 elif [[ "$model_type" == "modular" ]]; then
@@ -114,7 +125,7 @@ echo $model;
 echo "estimating probabilities...";
 target_eval_split=valid_${target_domain};
 echo $model
- python -u fairseq_cli/ensemble_eval_lm.py $data_path \
+python -u fairseq_cli/ensemble_eval_lm.py $data_path \
 --path $model \
 --gen-subset $target_eval_split \
 --target-domain train_${target_domain} \
@@ -132,6 +143,7 @@ echo $model
 --lr 5e-4        \
 --weight-decay 0.1     \
 --update-freq 1 \
+--memory-efficient-fp16 \
 --clip-norm 0.0     \
 --no-save           \
 --bucket-cap-mb 200                       \
@@ -155,7 +167,7 @@ echo $precomputed_prior;
 target_eval_split=test_${target_domain};
 
 if [[ "$estimate_posterior_only" == "False" ]]; then
-    python -u fairseq_cli/ensemble_eval_lm.py $data_path \
+python -u fairseq_cli/ensemble_eval_lm.py $data_path \
     --path $model \
     --gen-subset $target_eval_split \
     --target-domain train_${target_domain} \

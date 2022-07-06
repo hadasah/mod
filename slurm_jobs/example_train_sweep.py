@@ -6,7 +6,7 @@ import numpy as np
 from pathlib import Path
 
 
-def main(model, experiment, domains, data_bin, debug=False, dry_mode=False, id_=''):
+def main(model, experiment, domains, data_bin, debug=False, dry_mode=False, id_='', output_dir=''):
     DEBUG_MODE = debug
     DRY_MODE = dry_mode
     MODEL = model
@@ -17,7 +17,7 @@ def main(model, experiment, domains, data_bin, debug=False, dry_mode=False, id_=
     if RUN_CONSTANTS is None:
         raise Error("username isn't defined in slurm_constants file")
     MOD_FOLDER = RUN_CONSTANTS.get('MOD_FOLDER')
-    from slurm_jobs.model_specs import SPECS
+    from slurm_jobs.model_specs import SPECS, DOMAINS
     SPECS = SPECS[MODEL]
     if data_bin:
         DATA_BIN = data_bin
@@ -28,6 +28,8 @@ def main(model, experiment, domains, data_bin, debug=False, dry_mode=False, id_=
     SWEEP_NAME = f"sweep_{MODEL}_{SPECS['NUM_GPUS']}_GPUs"
     
     name_keys = ["EXPERIMENT", "MODEL", "STOP_TIME_HOURS", "NUM_STEPS", "UPDATE_FREQ", "LR", "NUM_GPUS", "ID"]
+    if domains[0] in DOMAINS.keys():
+        domains = DOMAINS[domains[0]]
     
     if not all([Path(DATA_BIN) / x in Path(DATA_BIN).glob("*/") for x in domains]):
         print([Path(DATA_BIN) / x for x in domains if Path(DATA_BIN) / x not in Path(DATA_BIN).glob("*/")])
@@ -54,7 +56,8 @@ def main(model, experiment, domains, data_bin, debug=False, dry_mode=False, id_=
                 "WANDB_PROJECT": ['publication-test'],
                 "WANDB_ENTITY": ['scaling-demix'],
                 "MOD_FOLDER": [MOD_FOLDER],
-                "ID": [id_]
+                "ID": [id_],
+                "OUTPUT_DIR": [output_dir]
             },
             'named_args': {},
         },
@@ -89,9 +92,10 @@ if __name__ == '__main__':
     parser.add_argument('--dry-mode', action='store_true')
     parser.add_argument('--model', type=str)
     parser.add_argument('--id', type=str)
+    parser.add_argument('--output-dir', type=str, default='')
     parser.add_argument('--domains', type=str, nargs="+")
     parser.add_argument('--data-bin', type=str, default='/private/home/suching/raw_data/data-bin-big/')
 
     parser.add_argument('--experiment', type=str)
     args = parser.parse_args()
-    main(args.model, args.experiment, args.domains, args.data_bin, args.debug, args.dry_mode, args.id)
+    main(args.model, args.experiment, args.domains, args.data_bin, args.debug, args.dry_mode, args.id, args.output_dir)

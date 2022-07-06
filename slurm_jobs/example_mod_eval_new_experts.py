@@ -3,10 +3,10 @@ from slurm_jobs.slurm_constants import *
 import os
 import re
 import argparse
-from slurm_jobs.model_specs import EVAL_FOLDERS
+from slurm_jobs.model_specs import EVAL_FOLDERS, DOMAINS
 from pathlib import Path
 
-def main(model, load_from_step, original_domains, additional_domains, evaluation_domains, data_bin=None, debug=False, dry_mode=False, output_dir="None", estimate_posterior_only=False):
+def main(model, load_from_step, original_domains, additional_domains, evaluation_domains, data_bin=None, debug=False, dry_mode=False, output_dir="None", estimate_posterior_only=False, checkpoint_id='last'):
     username = os.getlogin()
     if username not in CONSTANTS:
         raise Error("username isn't defined in slurm_constants file")
@@ -21,10 +21,16 @@ def main(model, load_from_step, original_domains, additional_domains, evaluation
     DEBUG_MODE = debug
     DRY_MODE = dry_mode
     name_keys = []
+    if evaluation_domains[0] in DOMAINS.keys():
+        evaluation_domains = DOMAINS[evaluation_domains[0]]
+    if additional_domains[0] in DOMAINS.keys():
+        additional_domains = ",".join(DOMAINS[additional_domains[0]])
     NUM_GPUS = 8
     NUM_EXPERTS = len(original_domains.split(",")) + len(additional_domains.split(","))
     NUM_NODES = NUM_EXPERTS // NUM_GPUS
-    # make sure all specified domains exist in data-bin folder
+
+
+        # make sure all specified domains exist in data-bin folder
     if not all([Path(DATA_BIN) / x in Path(DATA_BIN).glob("*/") for x in evaluation_domains]):
         print([Path(DATA_BIN) / x for x in evaluation_domains if Path(DATA_BIN) / x not in Path(DATA_BIN).glob("*/")])
         assert False
@@ -42,7 +48,7 @@ def main(model, load_from_step, original_domains, additional_domains, evaluation
     EVAL_FOLDER_ID = f'Base_dense_mod_LOAD_FROM_STEP_{load_from_step}_with_new_experts'
     # Comma separated list of the checkpoint IDs. 
     #Unfortunately this can't be set per job, I'm assuming we're always setting the right # updates
-    CHECKPOINT_IDS = ",".join(['last'] * NUM_EXPERTS)
+    CHECKPOINT_IDS = ",".join([checkpoint_id] * NUM_EXPERTS)
     print(CHECKPOINT_IDS)
     EVAL_SCRIPT = f'{MOD_FOLDER}/demix/mix_eval_pipeline_1.sh' if MODEL_TYPE in ['demix', 'modular'] else f'{MOD_FOLDER}/demix/eval_pipeline.sh'
     # all_runs = os.listdir("/checkpoint/suching/mod/_modular_transformer_lm_gpt3_medium/modular_transformer_lm_gpt3_medium_LR=0.0005/")
@@ -108,7 +114,7 @@ def main(model, load_from_step, original_domains, additional_domains, evaluation
             #TODO change these
             account=RUN_CONSTANTS.get('SLURM_ACCOUNT'),
             partition=RUN_CONSTANTS.get('SLURM_PARTITION'),
-            jobtime='2:00:00',
+            jobtime='00:10:00',
             mem_gb=480,
             job_id_start=1,
             debug_mode=DEBUG_MODE,
@@ -129,8 +135,9 @@ if __name__ == '__main__':
     parser.add_argument('--load-from-step', type=int)
     parser.add_argument('--data-bin', type=str)
     parser.add_argument('--output-dir', type=str, default="None")
+    parser.add_argument('--checkpoint-id', type=str, default="last")
     parser.add_argument('--estimate-posterior-only', action='store_true')
 
     args = parser.parse_args()
 
-    main(args.model,  args.load_from_step, ','.join(args.original_domains), ','.join(args.additional_domains), args.evaluation_domains, args.data_bin, args.debug, args.dry_mode, args.output_dir, args.estimate_posterior_only)
+    main(args.model,  args.load_from_step, ','.join(args.original_domains), args.additional_domains, args.evaluation_domains, args.data_bin, args.debug, args.dry_mode, args.output_dir, args.estimate_posterior_only, args.checkpoint_id)

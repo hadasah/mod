@@ -1,5 +1,6 @@
 from mod_utils import mod_checkpoint_utils
 from slurm_jobs.slurm_constants import CONSTANTS
+from slurm_jobs.model_specs import DOMAINS
 from slurm_jobs.slurm_job import run_grid
 import fairseq
 import os
@@ -9,7 +10,7 @@ from pathlib import Path
 import re
 
 
-def main(model, domains, debug=False, dry_mode=False, from_scratch=False, data_bin=None, load_from_step=-1, average=False, average_weights=None):
+def main(model, domains, debug=False, dry_mode=False, from_scratch=False, data_bin=None, load_from_step=-1, average=False, average_weights=None, path_to_averages=None):
     DEBUG_MODE = debug
     DRY_MODE = dry_mode
     FROM_SCRATCH = from_scratch
@@ -23,7 +24,12 @@ def main(model, domains, debug=False, dry_mode=False, from_scratch=False, data_b
         DATA_BIN = data_bin
     else:
         DATA_BIN = RUN_CONSTANTS.get('DATA_BIN')
-    assert all([Path(DATA_BIN) / x in Path(DATA_BIN).glob("*/") for x in domains])
+
+    if domains[0] in DOMAINS.keys():
+        domains = DOMAINS[domains[0]]
+    if not all([Path(DATA_BIN) / x in Path(DATA_BIN).glob("*/") for x in domains]):
+        print([Path(DATA_BIN) / x for x in domains if Path(DATA_BIN) / x not in Path(DATA_BIN).glob("*/") ])
+        assert False
     
     SWEEP_NAME = f"sweep_{MODEL}_adaptation_average_{average}"
 
@@ -36,7 +42,9 @@ def main(model, domains, debug=False, dry_mode=False, from_scratch=False, data_b
     NUM_NODES = 1 if NUM_GPUS < 8 else NUM_GPUS // 8
 
     # modify to path to dense checkpoint you want to use
-    PATH_TO_DENSE_CHECKPOINTS = Path(EVAL_FOLDERS[MODEL]["average"]) / f"_LOAD_FROM_STEP_{load_from_step}/"
+    if not path_to_averages:
+        path_to_averages = EVAL_FOLDERS[MODEL]["average"]
+    PATH_TO_DENSE_CHECKPOINTS = Path(path_to_averages) / f"_LOAD_FROM_STEP_{load_from_step}/"
     NEW_MODEL_TOP_FOLDER = f'/checkpoint/suching/mod/_adaptation_{MODEL}/adaptation_{MODEL}_LR={SPECS["LR"]}/'
 
     # re_string = ''
@@ -62,7 +70,7 @@ def main(model, domains, debug=False, dry_mode=False, from_scratch=False, data_b
                 "CHECKPOINTS_SUBFOLDER": ".",
                 "LOAD_FROM_STEP": [-1],
                 "RESET_ITEMS": ['optimizer,meters,lr-scheduler,dataloader'],
-                "NUM_STEPS": [SPECS["NUM_STEPS"] // 2],
+                "NUM_STEPS": [16000],
                 "AVERAGE": [average],
                 "AVERAGE_WEIGHTS": [average_weights],
                 "STOP_TIME_HOURS": [SPECS["TRAIN_HOURS"] + SPECS["TRAIN_HOURS"] // 2],
@@ -111,6 +119,7 @@ if __name__ == '__main__':
     parser.add_argument('--load-from-step', type=int, default=-1)
     parser.add_argument('--from-scratch', action='store_true')
     parser.add_argument('--data-bin', type=str)
+    parser.add_argument('--path-to-averages', type=str)
 
     args = parser.parse_args()
-    main(args.model, args.domains, args.debug, args.dry_mode, args.from_scratch, args.data_bin, args.load_from_step)
+    main(args.model, args.domains, args.debug, args.dry_mode, args.from_scratch, args.data_bin, args.load_from_step, path_to_averages=args.path_to_averages)

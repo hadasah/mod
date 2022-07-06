@@ -4,10 +4,10 @@ import os
 import re
 import numpy as np
 import argparse
-from slurm_jobs.model_specs import EVAL_FOLDERS
+from slurm_jobs.model_specs import EVAL_FOLDERS,DOMAINS
 from pathlib import Path
 
-def main(model, load_from_step, evaluation_domains, additional_domains=None, data_bin=None, debug=False, dry_mode=False, dev_posteriors_dir=None,output_dir=None):
+def main(model, load_from_step, evaluation_domains, additional_domains=None, data_bin=None, debug=False, dry_mode=False, dev_posteriors_dir=None,output_dir=None, greedy_soup=True, argmax_expert=False, uniform_average=False, posterior_average=False):
     username = os.getlogin()
     if username not in CONSTANTS:
         raise Error("username isn't defined in slurm_constants file")
@@ -24,6 +24,11 @@ def main(model, load_from_step, evaluation_domains, additional_domains=None, dat
     DRY_MODE = dry_mode
     name_keys = []
     NUM_GPUS = 1
+    if evaluation_domains[0] in DOMAINS.keys():
+        evaluation_domains = DOMAINS[evaluation_domains[0]]
+
+    if additional_domains is not None and additional_domains.split(',')[0] in DOMAINS.keys():
+        additional_domains = ",".join(DOMAINS[additional_domains.split(',')[0]])
 
     # make sure all specified domains exist in data-bin folder
     if not all([Path(DATA_BIN) / x in Path(DATA_BIN).glob("*/") for x in evaluation_domains]):
@@ -50,7 +55,8 @@ def main(model, load_from_step, evaluation_domains, additional_domains=None, dat
     # print(selected_folders)
 
     MODEL=model
-    SWEEP_NAME = f"eval_sweep_{MODEL}_average_mod"
+    NUM_EXPERTS = 8 + len(additional_domains.split(',') if additional_domains else [])
+    SWEEP_NAME = f"eval_sweep_{MODEL}_average_mod_argmaxexpert={argmax_expert}_uniformaverage={uniform_average}_posterioraverage={posterior_average}_greedysoup={greedy_soup}_numexperts={NUM_EXPERTS}_loadfromstep={load_from_step}"
     EVAL_FOLDER = EVAL_FOLDERS[MODEL]
     ROOT_MODEL_FOLDER = EVAL_FOLDER['mod']
 
@@ -88,7 +94,11 @@ def main(model, load_from_step, evaluation_domains, additional_domains=None, dat
                 "JQ_PATH": [JQ_PATH],
                 "RANDOM_JOB_PORT": [np.random.randint(5,100)],
                 "DEV_POSTERIORS_DIR": [dev_posteriors_dir],
-                "ADDITIONAL_DOMAINS": [additional_domains]
+                "ADDITIONAL_DOMAINS": [additional_domains],
+                "GREEDY_SOUP": [greedy_soup],
+                "UNIFORM_AVERAGE": [uniform_average],
+                "POSTERIOR_AVERAGE": [posterior_average],
+                "ARGMAX_EXPERT": [argmax_expert]
             },
             'named_args': {},
         },
@@ -109,7 +119,7 @@ def main(model, load_from_step, evaluation_domains, additional_domains=None, dat
             #TODO change these
             account=RUN_CONSTANTS.get('SLURM_ACCOUNT'),
             partition=RUN_CONSTANTS.get('SLURM_PARTITION'),
-            jobtime='2:00:00',
+            jobtime='4:00:00',
             volta32=True,
             mem_gb=480,
             job_id_start=1,
@@ -124,6 +134,10 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--debug', action='store_true')
     parser.add_argument('--dry-mode', action='store_true')
+    parser.add_argument('--greedy-soup', action='store_true')
+    parser.add_argument('--argmax-expert', action='store_true')
+    parser.add_argument('--uniform-average', action='store_true')
+    parser.add_argument('--posterior-average', action='store_true')
     parser.add_argument('--model', type=str)
     parser.add_argument('--evaluation-domains', type=str, nargs="+")
     parser.add_argument('--additional-domains', type=str, nargs="+")
@@ -132,4 +146,4 @@ if __name__ == '__main__':
     parser.add_argument('--dev-posteriors-dir', type=str)
     parser.add_argument('--output-dir', type=str)
     args = parser.parse_args()
-    main(args.model,  args.load_from_step, args.evaluation_domains, ",".join(args.additional_domains) if args.additional_domains else None, args.data_bin, args.debug, args.dry_mode, args.dev_posteriors_dir, args.output_dir)
+    main(args.model,  args.load_from_step, args.evaluation_domains, ",".join(args.additional_domains) if args.additional_domains else None, args.data_bin, args.debug, args.dry_mode, args.dev_posteriors_dir, args.output_dir, args.greedy_soup, args.argmax_expert, args.uniform_average, args.posterior_average)

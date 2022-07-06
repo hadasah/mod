@@ -35,7 +35,7 @@ WANDB_ENTITY=${15}
 MOD_FOLDER=${16}
 # identifier of this run in the sweep
 ID=${17}
-
+OUTPUT_DIR=${18}
 # OIFS=$IFS;
 # IFS=','
 # read -a domains_ <<< "$DOMAINS";
@@ -78,22 +78,27 @@ if [[ $ARCH == *"gpt3_small"* ]]; then
      CLIP_NORM=0.1;
      VALIDATION_INTERVAL=3000;
      NUM_WARMUP_STEPS=$((${NUM_STEPS} * 8 / 100));
+     FP16_PHRASE="--fp16";
 elif [[ $ARCH == *"gpt3_medium"* ]]; then
      NUM_WARMUP_STEPS=$((${NUM_STEPS} * 8 / 100));
      VALIDATION_INTERVAL=2000;
      CLIP_NORM=0.1;
+     FP16_PHRASE="--fp16";
 elif [[ $ARCH == *"gpt3_large"* ]]; then
      NUM_WARMUP_STEPS=$((${NUM_STEPS} * 8 / 100));
      VALIDATION_INTERVAL=1000;
      CLIP_NORM=0.1;
+     FP16_PHRASE="--fp16";
 elif [[ $ARCH == *"gpt3_xl"* ]]; then
      NUM_WARMUP_STEPS=$((${NUM_STEPS} * 8 / 100));
      VALIDATION_INTERVAL=500;
      CLIP_NORM=0.1;
+     FP16_PHRASE="--memory-efficient-fp16";
 elif [[ $ARCH == *"transformer_lm"* ]]; then
      TOKENS_PER_SAMPLE=1024;
      CLIP_NORM=0.1;
      VALIDATION_INTERVAL=6000;
+     FP16_PHRASE="--fp16";
      NUM_WARMUP_STEPS=$((${NUM_STEPS} * 8 / 100));
 fi;
 
@@ -147,8 +152,13 @@ fi;
 #      UPDATE_FREQ=$UPDATE_FREQ*$NUM_GPUS
 # fi;
 RESET_DATALOADER_PHRASE='';
-SERIALIZATION_DIR=${MODEL_DIR}/${ID}
+if [[ $OUTPUT_DIR == "" ]]; then 
+	SERIALIZATION_DIR=${MODEL_DIR}/${ID}
+else 
+	SERIALIZATION_DIR=$OUTPUT_DIR;
+fi;
 # if [[ $OLD_DIR != "None" ]]; then
+
 #      RESET_DATALOADER_PHRASE='--reset-dataloader';
 #      SERIALIZATION_DIR=${MODEL_DIR}/${SUBFOLDER_NAME};
 #      python $MOD_FOLDER/mod_utils/mod_checkpoint_utils.py \
@@ -196,7 +206,7 @@ if [[ $EXPERIMENT == *"demix"* ]]; then
           --train-domains $domains  \
           --eval-domains $domains \
           --required-batch-size-multiple 1 \
-          --fp16 \
+          ${FP16_PHRASE} \
           --distributed-world-size $NUM_GPUS \
           --distributed-port $PORT \
           --desynchronize --domain-parallel \
@@ -205,6 +215,7 @@ if [[ $EXPERIMENT == *"demix"* ]]; then
           --untie-parameters feedforward \
           --data-parallel-groups "${DATA_PARALLEL_GROUPS}" \
           --all-gather-list-size 32000 \
+	  --seed 4 \
 	  --stop-time-hours $STOP_TIME_HOURS \
           $RESET_DATALOADER_PHRASE \
           --pad-to-fixed-length;

@@ -102,7 +102,8 @@ elif [[ "$model_type" == "modular" ]]; then
         fi;    
     done
 
-    for i in $(seq 0 7); do
+    num_additional_domains=$(($num_gpus-9));
+    for i in $(seq 0 $num_additional_domains); do
         if ([[ "$exclude_expert" != "True" ]] || [[ "$i" != "$target_domain_ID" ]])  && ([[ "$only_use_expert" != "True" ]] || [[ "$i" == "$target_domain_ID" ]]) && [[ "${model_checkpoint_ids[$i]}" != "None" ]]; then
             # /checkpoint/suching/suchin_mod/small/_EXPERIMENT\=dense_NUMSTEPS\=36000_LR\=0.001/_DOMAIN_3_MOD_STEPS_30000_PHASE1_DENSE
             #model=${model}:${ROOT_MODEL_FOLDER}/${MODEL_FOLDER}/_DOMAIN_${i}_MOD_STEPS_${num_steps}_PHASE1_DENSE/checkpoint_last.pt
@@ -118,7 +119,7 @@ elif [[ "$model_type" == "modular" ]]; then
                 num_steps_="16000";
             fi;
             #MODEL\=transformerlmgpt3small_DOMAINID\=Sociology_LOADFROMSTEP\=-1_RESETITEMS\=optimizer\,meters\,lr-scheduler\,dataloader_NUMSTEPS\=40000_AVERAGE\=False_UPDATEFREQ\=32_LR\=5e-05
-            model=${model}:/checkpoint/suching/mod/_adaptation_${arch}/adaptation_${arch}_LR=0.0005/MODEL=${modelid}_DOMAINID=${additional_experts[$i]}_LOADFROMSTEP=-1_RESETITEMS=optimizer,meters,lr-scheduler,dataloader_NUMSTEPS=${num_steps_}_AVERAGE=False_UPDATEFREQ=32_LR=5e-05/checkpoint_${model_checkpoint_ids[$i]}.pt;
+            model=${model}:/checkpoint/suching/mod/_adaptation_${arch}/final_adapts/MODEL=${modelid}_DOMAINID=${additional_experts[$i]}_LOADFROMSTEP=-1_RESETITEMS=optimizer,meters,lr-scheduler,dataloader_NUMSTEPS=-1_AVERAGE=False_UPDATEFREQ=32_LR=5e-05/checkpoint_${model_checkpoint_ids[$i]}.pt;
             # model=${model}:${ROOT_MODEL_FOLDER}/MODEL=${modelid}_DOMAINID=${i}_LOADFROMSTEP=${num_steps}_RESETITEMS=dataloader_UPDATEFREQ=32_LR=0.0005/checkpoint_${model_checkpoint_ids[$i]}.pt;
 
             # /checkpoint/suching/mod_publication/mod/small/PHASE1_16GPU_MOD_2GPU_DOMAIN_7_MOD_STEPS_72000_PHASE1_DENSE

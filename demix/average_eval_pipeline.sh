@@ -42,6 +42,13 @@ DEV_POSTERIORS_DIR=${20}
 
 ADDITIONAL_DOMAINS=${21}
 
+GREEDY_SOUP=${22}
+UNIFORM_AVERAGE=${23}
+POSTERIOR_AVERAGE=${24}
+ARGMAX_EXPERT=${25}
+
+
+
 OIFS=$IFS;
 IFS=','
 read -a additional_domains <<< "$ADDITIONAL_DOMAINS";
@@ -61,6 +68,27 @@ OIFS=$IFS;
 IFS=','
 read -a model_checkpoint_ids <<< "$CHECKPOINT_IDS";
 IFS=$OIFS;
+
+
+if [[ $GREEDY_SOUP == "True" ]]; then
+   GREEDY_SOUP_PHRASE="--greedy-soup ";
+else GREEDY_SOUP_PHRASE='';
+fi;
+if [[ $ARGMAX_EXPERT == "True" ]]; then
+   ARGMAX_EXPERT_PHRASE="--argmax-expert ";
+else ARGMAX_EXPERT_PHRASE='';
+fi;
+if [[ $UNIFORM_AVERAGE == "True" ]]; then
+   UNIFORM_AVERAGE_PHRASE="--uniform-average ";
+else UNIFORM_AVERAGE_PHRASE='';
+fi;
+if [[ $POSTERIOR_AVERAGE == "True" ]]; then
+   POSTERIOR_AVERAGE_PHRASE="--posterior-average ";
+else POSTERIOR_AVERAGE_PHRASE='';
+fi;
+
+
+
 
 # IDS_TO_DOMAINS=('1b' 'anonymized_openwebtext' 'anonymized_realnews' 'anonymized_reviews' 'cs' 'legal' 'med' 'reddit' 'anonymized_latest_news_redo' 'anonymized_tweets_redo' 'anonymized_yelp_reviews_redo' 'cord19-redo' 'github_redo' 'gutenberg' 'legal_contracts' 'qasper');
 
@@ -93,6 +121,8 @@ elif [[ "$model_type" == "modular" ]]; then
                 modelid="transformerlmgpt3medium";
             elif [[ $arch == "transformer_lm_gpt3_large" ]]; then
 		        modelid="transformerlmgpt3large";
+            elif [[ $arch == "transformer_lm_gpt3_xl" ]]; then
+			modelid="transformerlmgpt3xl";
             fi;
 
             model=${model}:${ROOT_MODEL_FOLDER}/MODEL=${modelid}_DOMAINID=${i}_LOADFROMSTEP=${num_steps}_RESETITEMS=dataloader_UPDATEFREQ=32_LR=0.0005/checkpoint_${model_checkpoint_ids[$i]}.pt;
@@ -108,22 +138,26 @@ elif [[ "$model_type" == "modular" ]]; then
     done
     num_additional_experts=${#additional_domains[@]}
     len=$(( $num_additional_experts - 1 ))
-    for i in $(seq 0 $len); do
-        if ([[ "$exclude_expert" != "True" ]] || [[ "$i" != "$target_domain_ID" ]])  && ([[ "$only_use_expert" != "True" ]] || [[ "$i" == "$target_domain_ID" ]]) && [[ "${model_checkpoint_ids[$i]}" != "None" ]]; then
+    if [[ $additional_domains != "None" ]]; then
+    	for i in $(seq 0 $len); do
+        	if ([[ "$exclude_expert" != "True" ]] || [[ "$i" != "$target_domain_ID" ]])  && ([[ "$only_use_expert" != "True" ]] || [[ "$i" == "$target_domain_ID" ]]) && [[ "${model_checkpoint_ids[$i]}" != "None" ]]; then
             # /checkpoint/suching/suchin_mod/small/_EXPERIMENT\=dense_NUMSTEPS\=36000_LR\=0.001/_DOMAIN_3_MOD_STEPS_30000_PHASE1_DENSE
             #model=${model}:${ROOT_MODEL_FOLDER}/${MODEL_FOLDER}/_DOMAIN_${i}_MOD_STEPS_${num_steps}_PHASE1_DENSE/checkpoint_last.pt
             # model=${model}:${ROOT_MODEL_FOLDER}/${MODEL_FOLDER}/DOMAIN_${i}/${num_steps}/checkpoint_${model_checkpoint_ids[$i]}-rank-${i}.pt
 #/checkpoint/suching/suchin_mod//small//_EXPERIMENT=demix_mod_NUMSTEPS=36000_LR=0.001/DOMAIN_3/6000/
             # model=${model}:${ROOT_MODEL_FOLDER}/${MODEL_FOLDER}/DOMAIN_${i}/$num_steps/checkpoint_last-rank-0.pt
 
-            if [[ $arch == "transformer_lm_gpt3_small" ]]; then
-                modelid="transformerlmgpt3small";
-            elif [[ $arch == "transformer_lm_gpt3_medium" ]]; then
-                modelid="transformerlmgpt3medium";
-            fi;
+           	 if [[ $arch == "transformer_lm_gpt3_small" ]]; then
+                	modelid="transformerlmgpt3small";
+               	 	stepnum="40000"
+            	elif [[ $arch == "transformer_lm_gpt3_medium" ]]; then
+                	modelid="transformerlmgpt3medium";
+                	stepnum="16000"
+            	fi;
             #MODEL\=transformerlmgpt3small_DOMAINID\=Sociology_LOADFROMSTEP\=-1_RESETITEMS\=optimizer\,meters\,lr-scheduler\,dataloader_NUMSTEPS\=40000_AVERAGE\=False_UPDATEFREQ\=32_LR\=5e-05
-            model=${model}:/checkpoint/suching/mod/_adaptation_${arch}/adaptation_${arch}_LR=0.0005/MODEL=${modelid}_DOMAINID=${additional_domains[$i]}_LOADFROMSTEP=-1_RESETITEMS=optimizer,meters,lr-scheduler,dataloader_NUMSTEPS=40000_AVERAGE=False_UPDATEFREQ=32_LR=5e-05/checkpoint_${model_checkpoint_ids[$i]}.pt;
-            # model=${model}:${ROOT_MODEL_FOLDER}/MODEL=${modelid}_DOMAINID=${i}_LOADFROMSTEP=${num_steps}_RESETITEMS=dataloader_UPDATEFREQ=32_LR=0.0005/checkpoint_${model_checkpoint_ids[$i]}.pt;
+            #model=${model}:/checkpoint/suching/mod/_adaptation_${arch}/adaptation_${arch}_LR=0.0005/MODEL=${modelid}_DOMAINID=${additional_domains[$i]}_LOADFROMSTEP=-1_RESETITEMS=optimizer,meters,lr-scheduler,dataloader_NUMSTEPS=${stepnum}_AVERAGE=False_UPDATEFREQ=32_LR=5e-05/checkpoint_${model_checkpoint_ids[$i]}.pt;
+	    	model=${model}:/checkpoint/suching/mod/_adaptation_${arch}/final_adapts/MODEL=${modelid}_DOMAINID=${additional_domains[$i]}_LOADFROMSTEP=-1_RESETITEMS=optimizer,meters,lr-scheduler,dataloader_NUMSTEPS=-1_AVERAGE=False_UPDATEFREQ=32_LR=5e-05/checkpoint_${model_checkpoint_ids[$i]}.pt;           
+		# model=${model}:${ROOT_MODEL_FOLDER}/MODEL=${modelid}_DOMAINID=${i}_LOADFROMSTEP=${num_steps}_RESETITEMS=dataloader_UPDATEFREQ=32_LR=0.0005/checkpoint_${model_checkpoint_ids[$i]}.pt;
 
             # /checkpoint/suching/mod_publication/mod/small/PHASE1_16GPU_MOD_2GPU_DOMAIN_7_MOD_STEPS_72000_PHASE1_DENSE
             # if [[ $i == 7 ]]; then
@@ -132,8 +166,9 @@ elif [[ "$model_type" == "modular" ]]; then
             # model=${model}:${ROOT_MODEL_FOLDER}/${MODEL_FOLDER}/MOD_2_GPU_DOMAIN_${i}_MOD_STEPS_FROM_SCRATCH/checkpoint_${model_checkpoint_ids[$i]}.pt;
             # fi;
             # model=${model}:${ROOT_MODEL_FOLDER}/${MODEL_FOLDER}/PHASE1_16GPU_MOD_2GPU_DOMAIN_${i}_MOD_STEPS_${num_steps}_PHASE1_DENSE/checkpoint_${model_checkpoint_ids[$i]}.pt;
-        fi;    
-    done
+        	fi;    
+    	done;
+      fi;
 fi;
 model="${model#?}";
 
@@ -192,4 +227,8 @@ target_eval_split=test_${target_domain};
 --ensemble-type ${ensemble_type} \
 --precomputed-prior ${precomputed_prior} \
 --eval-topk ${eval_top_k} \
+$UNIFORM_AVERAGE_PHRASE \
+$POSTERIOR_AVERAGE_PHRASE \
+$ARGMAX_EXPERT_PHRASE \
+$GREEDY_SOUP_PHRASE \
 --best-average-output-dir ${best_average_output_dir}/DOMAINID=${target_domain};

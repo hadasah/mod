@@ -3,7 +3,7 @@ from slurm_jobs.slurm_constants import *
 import os
 import re
 import argparse
-from slurm_jobs.model_specs import EVAL_FOLDERS
+from slurm_jobs.model_specs import EVAL_FOLDERS,DOMAINS
 from pathlib import Path
 
 def main(model, load_from_step, domains, data_bin=None, debug=False, dry_mode=False, output_dir="None", estimate_posterior_only=False):
@@ -24,6 +24,8 @@ def main(model, load_from_step, domains, data_bin=None, debug=False, dry_mode=Fa
     name_keys = []
     NUM_GPUS = 8
 
+    if domains[0] in DOMAINS.keys():
+        domains = DOMAINS[domains[0]]
     # make sure all specified domains exist in data-bin folder
     assert all([Path(DATA_BIN) / x in Path(DATA_BIN).glob("*/") for x in domains])
 

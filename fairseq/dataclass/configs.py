@@ -907,6 +907,10 @@ class CommonEvalConfig(FairseqDataclass):
     best_average_output_dir: Optional[str] = field(
             default=None, metadata={"help": "for averaging, path to save output"}
     )
+    greedy_soup: bool = field(default=False, metadata={"help": "perform greedy soup averaging"})
+    uniform_average: bool = field(default=False, metadata={"help": "perform greedy soup averaging"})
+    posterior_average: bool = field(default=False, metadata={"help": "perform greedy soup averaging"})
+    argmax_expert: bool = field(default=False, metadata={"help": "perform greedy soup averaging"})
     results_path: Optional[str] = field(
         default=None, metadata={"help": "path to save eval results (optional)"}
     )
