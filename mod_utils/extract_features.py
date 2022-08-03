@@ -13,6 +13,8 @@ import numpy as np
 import pandas as pd
 import time
 from pathlib import Path
+from fairseq.data.encoders.gpt2_bpe import get_encoder
+
 
 A = TypeVar("A")
 
@@ -75,6 +77,10 @@ def extract(input_df, output_file, model_path, batch_size, submitit=False):
         model = model.cuda(job_env.global_rank)
     else:
         model = model.cuda()
+    bpe = get_encoder("/private/home/suching/raw_data/demix_scale/data-bin/encoder.json", "/private/home/suching/raw_data/demix_scale/data-bin/vocab.bpe")
+
+    input_df['text'] = input_df.text.apply(bpe.decode)
+
     tokenizer = AutoTokenizer.from_pretrained(model_path)
 
     tokenizer.pad_token = tokenizer.eos_token
@@ -113,12 +119,19 @@ def extract(input_df, output_file, model_path, batch_size, submitit=False):
                 torch.cat([vectors_already_done, vectors_], 0)), output_file)
     torch.save((torch.cat(ids, 0).cpu(), torch.cat(vectors, 0).cpu()), output_file)
 
+def chunks(lst, n):
+    """Yield successive n-sized chunks from lst."""
+    for i in range(0, len(lst), n):
+        yield lst[i:i + n]
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--model",
                         type=str,
                         required=True,
-                        help="path to huggingface model name (e.g. roberta-base) ")
+                        help="path to huggingface embedding model name (e.g. roberta-base) ")
+    parser.add_argument('--seq-len', type=int, required=True, help="sequence length of embedding model")
     parser.add_argument("--output_dir", type=Path, required=True, help='path to output')
     parser.add_argument("--input_file", type=str, required=True, help='path to output')
     parser.add_argument('--batch_size', type=int, required=False, default=64)
@@ -137,7 +150,10 @@ if __name__ == '__main__':
     print(f'reading data from {args.input_file}...')
     with open(args.input_file, 'r') as f:
         z = f.read()
-    text = z.split('<|endoftext|>')
+
+    text = [int(x.strip()) for x in z.split()]
+    text = list(chunks(text, args.seq_len))
+
     df = pd.DataFrame({"text": text, "id": range(len(text))})
     #df = pd.read_json(args.input_file, lines=True)
     if args.submitit:

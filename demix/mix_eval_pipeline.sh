@@ -59,7 +59,7 @@ target_domain=$target_domain_ID
 model=;
 
 if [[ "$model_type" == "demix" ]]; then
-    number_experts=32;
+    number_experts=128;
     top=$(($number_experts - 1))
     interval=$(($number_experts / 8))
     for i in $(seq 0 $interval $top); do
@@ -125,7 +125,7 @@ echo $model;
 echo "estimating probabilities...";
 target_eval_split=valid_${target_domain};
 echo $model
-python -u fairseq_cli/ensemble_eval_lm.py $data_path \
+ python -u fairseq_cli/ensemble_eval_lm.py $data_path \
 --path $model \
 --gen-subset $target_eval_split \
 --target-domain train_${target_domain} \
@@ -167,7 +167,7 @@ echo $precomputed_prior;
 target_eval_split=test_${target_domain};
 
 if [[ "$estimate_posterior_only" == "False" ]]; then
-python -u fairseq_cli/ensemble_eval_lm.py $data_path \
+ python -u fairseq_cli/ensemble_eval_lm.py $data_path \
     --path $model \
     --gen-subset $target_eval_split \
     --target-domain train_${target_domain} \

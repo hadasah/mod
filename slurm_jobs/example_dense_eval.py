@@ -30,9 +30,12 @@ def main(model, domains, path_to_model=None, path_to_model_dir=None, checkpoint_
         MODEL_FOLDER = path_to_model_dir
         SWEEP_NAME = f"eval_sweep_average_{eval_tag}"
         all_runs = os.listdir(MODEL_FOLDER)
-        regex = re.compile(model_regex)
-        selected_folders = [folder for folder in all_runs if regex.match(folder)]
-        print(selected_folders)
+        if model_regex is not None:
+            regex = re.compile(model_regex)
+            selected_folders = [folder for folder in all_runs if regex.match(folder)]
+            print(selected_folders)
+        else:
+            selected_folders = "."
     else:
         if not tag:
             tag = 'dense'
@@ -134,7 +137,7 @@ if __name__ == '__main__':
     parser.add_argument('--dry-mode', action='store_true')
     parser.add_argument('--path-to-model', type=str)
     parser.add_argument('--path-to-model-dir', type=str)
-    parser.add_argument('--model-regex', type=str)
+    parser.add_argument('--model-regex', type=str, default=None)
     parser.add_argument('--checkpoint-id', type=str)
     parser.add_argument('--model', type=str)
     parser.add_argument('--tag', type=str, default=None)

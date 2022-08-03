@@ -221,7 +221,7 @@ class SequenceScorer(object):
                 [
                     {
                         "tokens": ref,
-                        "expert_probs": weights[:, :, -1] if weights is not None else None,
+                        "expert_probs": weights[:, list(range(weights.shape[1])), sample['net_input']['src_lengths']-1] if weights is not None else None,
                         "score": score_i,
                         "attention": avg_attn_i,
                         "alignment": alignment,

@@ -6,7 +6,7 @@ import argparse
 from slurm_jobs.model_specs import EVAL_FOLDERS, DOMAINS
 from pathlib import Path
 
-def main(model, load_from_step, original_domains, additional_domains, evaluation_domains, data_bin=None, debug=False, dry_mode=False, output_dir="None", estimate_posterior_only=False, checkpoint_id='last'):
+def main(model, load_from_step, original_domains, additional_domains, evaluation_domains, data_bin=None, debug=False, dry_mode=False, output_dir="None", estimate_posterior_only=False, checkpoint_id='last', topk=None):
     username = os.getlogin()
     if username not in CONSTANTS:
         raise Error("username isn't defined in slurm_constants file")
@@ -26,9 +26,11 @@ def main(model, load_from_step, original_domains, additional_domains, evaluation
     if additional_domains[0] in DOMAINS.keys():
         additional_domains = ",".join(DOMAINS[additional_domains[0]])
     NUM_GPUS = 8
+    print(additional_domains)
     NUM_EXPERTS = len(original_domains.split(",")) + len(additional_domains.split(","))
     NUM_NODES = NUM_EXPERTS // NUM_GPUS
-
+    if not topk:
+        topk = NUM_EXPERTS
 
         # make sure all specified domains exist in data-bin folder
     if not all([Path(DATA_BIN) / x in Path(DATA_BIN).glob("*/") for x in evaluation_domains]):
@@ -45,7 +47,7 @@ def main(model, load_from_step, original_domains, additional_domains, evaluation
     # Used to distinguish between my naming conventions for demix vs modular models
     MODEL_TYPE = 'modular'
     # Determines where the posteriors and results gets saved 
-    EVAL_FOLDER_ID = f'Base_dense_mod_LOAD_FROM_STEP_{load_from_step}_with_new_experts'
+    EVAL_FOLDER_ID = f'Base_dense_mod_LOAD_FROM_STEP_{load_from_step}_with_new_experts_topk_{topk}'
     # Comma separated list of the checkpoint IDs. 
     #Unfortunately this can't be set per job, I'm assuming we're always setting the right # updates
     CHECKPOINT_IDS = ",".join([checkpoint_id] * NUM_EXPERTS)
@@ -84,7 +86,7 @@ def main(model, load_from_step, original_domains, additional_domains, evaluation
                 "MODEL_TYPE": [MODEL_TYPE],
                 # "GENERALIST_MODEL": ["/checkpoint/suching/margaret_sweep_rerun/small/_EXPERIMENT=dense_NUMSTEPS=36000_LR=0.001/checkpoint_1_30000.pt"],
                 "GENERALIST_MODEL": ["None"],
-                "TOP_K": [NUM_EXPERTS],
+                "TOP_K": [topk],
                 "EVAL_FOLDER_ID": [EVAL_FOLDER_ID],
                 "LOAD_FROM_STEP": [load_from_step],
                 "EXCLUDE_EXPERT": ["False"],
@@ -133,6 +135,7 @@ if __name__ == '__main__':
     parser.add_argument('--additional-domains', type=str, nargs='+')
     parser.add_argument('--evaluation-domains', type=str, nargs="+")
     parser.add_argument('--load-from-step', type=int)
+    parser.add_argument('--topk', type=int, default=None)
     parser.add_argument('--data-bin', type=str)
     parser.add_argument('--output-dir', type=str, default="None")
     parser.add_argument('--checkpoint-id', type=str, default="last")
@@ -140,4 +143,4 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    main(args.model,  args.load_from_step, ','.join(args.original_domains), args.additional_domains, args.evaluation_domains, args.data_bin, args.debug, args.dry_mode, args.output_dir, args.estimate_posterior_only, args.checkpoint_id)
+    main(args.model,  args.load_from_step, ','.join(args.original_domains), args.additional_domains, args.evaluation_domains, args.data_bin, args.debug, args.dry_mode, args.output_dir, args.estimate_posterior_only, args.checkpoint_id, args.topk)

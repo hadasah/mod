@@ -1,29 +1,29 @@
 SPECS = {
             "transformer_lm_gpt3_small": {
-                'NUM_GPUS': 16,
+                'NUM_GPUS': 128,
                 "NUM_MOD_GPUS": 2,
                 "NUM_STEPS": 80000,
-                "TRAIN_HOURS": -1,
+                "TRAIN_HOURS": 48,
                 "MOD_FROM_STEPS": [24000, 56000, 80000],
-                "SAVE_INTERVAL_UPDATES": 8000,
+                "SAVE_INTERVAL_UPDATES": 1000,
                 "LR": 5e-4,
                 "UF": 32
             },
             "transformer_lm_gpt3_medium": {
-                "NUM_GPUS": 32,
+                "NUM_GPUS": 128,
                 "NUM_MOD_GPUS": 4,
                 "NUM_STEPS": 32000,
                 "MOD_FROM_STEPS": [8000, 14000],
-                "TRAIN_HOURS": -1,
-                "SAVE_INTERVAL_UPDATES": 2000,
+                "TRAIN_HOURS": 48,
+                "SAVE_INTERVAL_UPDATES": 1000,
                 "LR": 5e-4,
                 "UF": 32
             },
             "transformer_lm_gpt3_large": {
-                'NUM_GPUS': 64,
+                'NUM_GPUS': 128,
                 "NUM_MOD_GPUS": 8,
                 "NUM_STEPS": 24000,
-                "TRAIN_HOURS": -1,
+                "TRAIN_HOURS": 48,
                 "MOD_FROM_STEPS": [12000],
                 "SAVE_INTERVAL_UPDATES": 2000,
                 "LR": 5e-4,
